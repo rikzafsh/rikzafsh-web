@@ -1,0 +1,220 @@
+/* ==========================================================================
+   1. PENYALURAN VARIABEL WARNA (PALETTE & THEME)
+   ========================================================================== */
+:root {
+    /* Palet Warna Spesifik (Nama Warna) */
+    --deepPurple: #703996;
+    --lightBlue: #29aafe;
+    --royalBlue: #3a43e0;
+    --lightLavender: #cdcff6;
+    
+    --white: #ffffff;
+    --lightGray: #f4f4f9;
+    --darkText: #2b2b2b;
+    --dangerRed: #d9534f;
+
+    /* PEMETAAN TEMA DEFAULT (NORMAL MODE) */
+    --theme-primary: var(--deepPurple);
+    --theme-accent: var(--lightBlue);
+    --theme-button: var(--royalBlue);
+    --theme-bg-sidebar: var(--lightLavender);
+    --theme-bg-body: var(--lightGray);
+    --theme-text: var(--darkText);
+}
+
+/* PEMETAAN TEMA BERKABUNG (MOURNING MODE) 
+   Akan aktif jika tag <body> memiliki atribut data-theme="mourning" */
+[data-theme="mourning"] {
+    --theme-primary: #1a1a1a;       /* Hitam Pekat */
+    --theme-accent: #666666;        /* Abu-abu Medium */
+    --theme-button: #444444;        /* Abu-abu Tua */
+    --theme-bg-sidebar: #d6d6d6;    /* Abu-abu Terang */
+    --theme-bg-body: #ececec;       /* Latar Abu-abu Sangat Terang */
+    --theme-text: #111111;          /* Teks Hitam Tajam */
+}
+
+/* ==========================================================================
+   2. STRUKTUR LAYOUT & KOMPONEN
+   ========================================================================== */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--theme-bg-body);
+    color: var(--theme-text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background-color 0.3s, color 0.3s; /* Efek transisi halus saat ganti tema */
+}
+
+/* Pembungkus Header */
+.header-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Navbar Utama */
+.navbar {
+    background-color: var(--theme-primary);
+    color: var(--white);
+    padding: 12px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s;
+}
+.navbar .logo a { 
+    font-size: 1.4em; 
+    font-weight: bold; 
+    color: var(--white); 
+    text-decoration: none;
+}
+
+/* Area Profil & Nav Kanan */
+.navbar-right {
+    display: flex;
+    align-items: center;
+}
+.profile-box {
+    display: flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 5px 15px 5px 6px;
+    border-radius: 30px;
+}
+.avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+    border: 2px solid var(--theme-accent);
+}
+.username {
+    font-weight: 600;
+    font-size: 0.95em;
+    color: var(--white);
+}
+.login-link {
+    color: var(--white);
+    text-decoration: none;
+    font-weight: 600;
+}
+.login-link:hover { color: var(--theme-accent); }
+
+.menu-btn {
+    background: none;
+    border: none;
+    color: var(--white);
+    font-size: 28px;
+    cursor: pointer;
+    margin-left: 15px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.menu-btn:hover { color: var(--theme-accent); }
+
+/* Sub Navbar */
+.sub-navbar {
+    background-color: var(--theme-accent);
+    color: var(--white);
+    padding: 8px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85em;
+    font-weight: bold;
+    letter-spacing: 1px;
+    transition: background-color 0.3s;
+}
+.sub-navbar .menu-kiri a {
+    color: var(--white);
+    text-decoration: none;
+    margin-right: 20px;
+    transition: opacity 0.2s;
+}
+.sub-navbar .menu-kiri a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+.sub-navbar .tanggal-kanan {
+    font-weight: 500;
+}
+
+/* Konten Utama */
+.main-content {
+    flex: 1;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 30px;
+    box-sizing: border-box;
+}
+
+/* Sidebar Kanan (Off-Canvas) */
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: -280px;
+    width: 280px;
+    height: 100vh;
+    background-color: var(--theme-bg-sidebar);
+    padding: 20px;
+    box-sizing: border-box;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    transition: right 0.3s ease, background-color 0.3s;
+    z-index: 1000;
+}
+.sidebar.active { right: 0; }
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--theme-primary);
+    cursor: pointer;
+    float: right;
+}
+.sidebar h3 { 
+    color: var(--theme-primary); 
+    margin-top: 20px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 5px;
+}
+.sidebar a {
+    display: block;
+    color: var(--theme-button);
+    text-decoration: none;
+    padding: 10px 5px;
+    font-weight: 500;
+    border-radius: 4px;
+}
+.sidebar a:hover { 
+    background-color: rgba(255, 255, 255, 0.4);
+    color: var(--theme-primary); 
+}
+
+/* Overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    z-index: 999;
+}
+.overlay.active { display: block; }
+
+/* Footer */
+.footer {
+    background-color: var(--theme-button);
+    color: var(--white);
+    text-align: center;
+    padding: 15px;
+    margin-top: auto;
+    transition: background-color 0.3s;
+}

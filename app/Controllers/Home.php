@@ -6,6 +6,10 @@ class Home extends BaseController
 {
     public function index(): string
     {
-        return view('welcome_message');
+        $data = [
+            'title' => 'Beranda | Ruang Rikza',
+            // 'theme' => 'mourning'
+        ];
+        return view('home', $data);
     }
 }

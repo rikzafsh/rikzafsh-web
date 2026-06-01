@@ -26,10 +26,10 @@ class Database extends Config
      */
     public array $default = [
         'DSN'          => '',
-        'hostname'     => 'localhost',
-        'username'     => '',
-        'password'     => '',
-        'database'     => '',
+        'hostname'     => '127.0.0.1',       // Ubah jadi 127.0.0.1
+        'username'     => 'root',            // Pastikan root
+        'password'     => '',                // Biarkan kosong
+        'database'     => 'db_rikzafsh',     // Nama databasemu
         'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
         'pConnect'     => false,
@@ -41,9 +41,8 @@ class Database extends Config
         'compress'     => false,
         'strictOn'     => false,
         'failover'     => [],
-        'port'         => 3306,
+        'port'         => 3307,              // Ubah port ke 3307
         'numberNative' => false,
-        'foundRows'    => false,
         'dateFormat'   => [
             'date'     => 'Y-m-d',
             'datetime' => 'Y-m-d H:i:s',

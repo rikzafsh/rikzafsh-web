@@ -1,0 +1,125 @@
+/* --- HAFIDZQUIZ CLEAN THEME --- */
+body {
+    background-color: #f4f7f6; /* Latar belakang terang dan bersih */
+    color: #333333;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Banner Atas */
+.hq-header-banner {
+    background-color: #ffffff;
+    color: #2c3e50;
+    padding: 25px 20px;
+    text-align: center;
+    border-bottom: 4px solid #1abc9c; /* Aksen hijau toska */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+.banner-subtitle { font-size: 14px; font-weight: 600; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px; }
+.banner-title { font-size: 26px; font-weight: 800; margin: 8px 0; color: #2c3e50; }
+.banner-desc { font-size: 16px; color: #34495e; font-weight: 500; }
+
+/* Kartu XP */
+.xp-card {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #2c3e50;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 40px;
+    border: 1px solid #e0e6ed;
+}
+.xp-icon { color: #f1c40f; margin-right: 5px; }
+
+/* Peta Jalur */
+.map-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    position: relative;
+    padding: 20px 0 60px 0;
+}
+
+/* Garis penghubung vertikal di belakang tombol */
+.map-container::before {
+    content: '';
+    position: absolute;
+    top: 40px;
+    bottom: 40px;
+    width: 6px;
+    background-color: #dce4ec;
+    z-index: 0;
+    border-radius: 3px;
+}
+
+.node-wrapper {
+    position: relative;
+    z-index: 1;
+}
+
+/* Alur Zigzag Halus */
+/* --- ALUR GELOMBANG SINUS FLUID (8 Langkah Berulang) --- */
+.node-wrapper:nth-child(8n+1) { transform: translateX(0px); }
+.node-wrapper:nth-child(8n+2) { transform: translateX(-35px); }
+.node-wrapper:nth-child(8n+3) { transform: translateX(-65px); }
+.node-wrapper:nth-child(8n+4) { transform: translateX(-35px); }
+.node-wrapper:nth-child(8n+5) { transform: translateX(0px); }
+.node-wrapper:nth-child(8n+6) { transform: translateX(35px); }
+.node-wrapper:nth-child(8n+7) { transform: translateX(65px); }
+.node-wrapper:nth-child(8n+8) { transform: translateX(35px); }
+
+/* Tombol Level */
+.node-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: none;
+    font-size: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* 1. Status Terkunci (Abu-abu Netral) */
+.node-btn.locked {
+    background-color: #ecf0f1;
+    color: #bdc3c7;
+    box-shadow: 0 6px 0 #d5dbdb;
+    cursor: not-allowed;
+}
+
+/* 2. Status Aktif / Sedang Dikerjakan (Biru Terang) */
+.node-btn.active {
+    background-color: #3498db; 
+    color: white;
+    box-shadow: 0 6px 0 #2980b9;
+}
+.node-btn.active:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 transparent;
+}
+
+/* 3. Status Selesai (Emas) */
+.node-btn.completed {
+    background-color: #f1c40f;
+    color: white;
+    box-shadow: 0 6px 0 #f39c12;
+}
+.node-btn.completed:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 transparent;
+}
