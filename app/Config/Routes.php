@@ -49,6 +49,24 @@ $routes->post('artikel/simpan', 'Blog::simpanArtikel');
 
 $routes->get('profile/(:segment)', 'Profil::index/$1');
 
+$routes->get('projects', 'Projects::index');
+
+// Grup utama khusus developer
+$routes->group('dashboard/projects', ['filter' => 'group:developer'], function($routes) {
+    // 1. Route untuk menampilkan halaman (Tab View)
+    $routes->get('', 'Dashboard\ProjectsDashboardController::index');
+
+    // 2. Route khusus aksi Pustaka Karya
+    $routes->post('pustaka/simpan', 'Dashboard\PustakaKaryaController::simpan');
+    $routes->post('pustaka/update/(:num)', 'Dashboard\PustakaKaryaController::update/$1');
+    $routes->get('pustaka/hapus/(:num)', 'Dashboard\PustakaKaryaController::hapus/$1');
+
+    // Nanti untuk Web Apps bisa ditambah di sini:
+    // $routes->post('webapps/simpan', 'Dashboard\WebAppsController::simpan');
+});
+
+
+
 $routes->group('HafidzQuiz', ['filter' => 'roleCheck'], function($routes) {
     $routes->get('/', 'HafidzQuiz::index');
     $routes->get('play', 'HafidzQuiz::play');
@@ -66,3 +84,4 @@ $routes->group('HafidzQuizGame', ['filter' => 'roleCheck'], function($routes) {
     $routes->get('getMapData', 'HafidzQuizGame::getMapData');
     $routes->post('submitResult', 'HafidzQuizGame::submitResult');
 });
+

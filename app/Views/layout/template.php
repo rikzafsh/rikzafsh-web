@@ -49,7 +49,8 @@
             <div class="menu-kiri">
                 <a href="/">HOME</a>
                 <a href="/artikel">ARTICLES</a>
-                <a href="/project">PROJECTS</a>
+                <a href="/projects">PROJECTS</a>
+                <a href="/utilities">UTILITIES</a>
             </div>
             <div class="tanggal-kanan">
                 <?php

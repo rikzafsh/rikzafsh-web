@@ -41,6 +41,78 @@
         .result-screen { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
         .result-screen h2 { color: #2c3e50; font-size: 32px; margin-bottom: 10px;}
         .result-screen p { color: #7f8c8d; font-size: 18px;}
+        /* Mode Default Pilihan Ganda (Menumpuk Vertikal) */
+        .options-container.mode-pilihan {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* Mode Word Bank (Gaya Grid / Menyamping ala Duolingo) */
+        .options-container.mode-wordbank {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            margin-top: 25px;
+            direction: rtl; /* Supaya urutan pilihan kata Arab mengalir dari kanan */
+        }
+
+        /* Gaya Kotak Kosong / Slot Rumpang di dalam Ayat */
+        .blank-slot {
+            display: inline-block;
+            min-width: 80px;
+            height: 35px;
+            margin: 0 5px;
+            border-bottom: 2px dashed #a0aec0;
+            background-color: #f7fafc;
+            border-radius: 4px;
+            text-align: center;
+            vertical-align: middle;
+            line-height: 35px;
+            color: #2b6cb0;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        /* Kotak Slot saat sudah terisi kata */
+        .blank-slot.filled {
+            border: 1px solid #cbd5e0;
+            border-bottom: 3px solid #cbd5e0;
+            background-color: #ffffff;
+            padding: 0 10px;
+        }
+
+        /* Gaya Tombol Blok Kata di Word Bank bawah */
+        .word-chip {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-bottom: 4px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 18px;
+            font-family: 'LPMQ Isep Misbah', sans-serif; /* Sesuaikan font Arabmu */
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+
+        .word-chip:active {
+            border-bottom-width: 2px;
+            transform: translateY(2px);
+        }
+
+        /* Aturan Teks Arab agar otomatis rapi dari kanan ke kiri */
+        .question-text.arabic-render {
+            direction: rtl;
+            text-align: center;
+            font-size: 24px;
+            line-height: 2.2;
+            font-family: 'LPMQ Isep Misbah', sans-serif;
+        }
     </style>
 </head>
 <body>
@@ -53,17 +125,20 @@
     </div>
 
     <div class="quiz-body" id="quiz-body">
-        <h3 id="loading-text" style="color: #3498db;">Mengunduh Ayat-Ayat...</h3>
+        <h3 id="loading-text" style="color: #3498db; text-align: center; margin-top: 50px;">Mengunduh Ayat-Ayat...</h3>
+        
         <div id="quiz-content" style="display: none; flex-direction: column;">
             <div class="question-type-badge" id="q-type-badge">Tipe Soal</div>
             <div class="question-instructions" id="q-instructions">Instruksi Soal</div>
+            
             <div class="question-text" id="q-text">Teks Pertanyaan</div>
+            
             <div class="options-container" id="options-container"></div>
         </div>
     </div>
 
     <div class="quiz-footer" id="quiz-footer" style="display: none;">
-        <button class="btn-next" id="btn-next" onclick="nextQuestion()">LANJUTKAN</button>
+        <button class="btn-next" id="btn-next" onclick="nextQuestion()">CEK JAWABAN</button>
     </div>
 
     <div class="result-screen" id="result-screen">
@@ -347,13 +422,33 @@
         document.getElementById('btn-next').style.display = 'inline-block';
     }
 
+    // Buat satu variabel global di bagian atas script untuk penanda status tombol
+    let isCheckingAnswer = true; 
+
     function nextQuestion() {
-        currentQuestionIndex++;
-        if (currentQuestionIndex < currentQuestions.length) {
-            displayQuestion();
+        const btnNext = document.getElementById('btn-next');
+
+        // TAHAP 1: User menekan "CEK JAWABAN"
+        if (isCheckingAnswer) {
+            
+            // Panggil fungsi validasi jawaban kuis Anda di sini (misal: checkUserAnswer())
+            let isCorrect = checkUserAnswer(); 
+            
+            // Ubah teks tombol menjadi LANJUTKAN setelah jawaban divalidasi
+            btnNext.innerText = "LANJUTKAN";
+            isCheckingAnswer = false; // Set status ke tahap berikutnya
+            return; // Kunci agar tidak langsung pindah soal dulu
+        }
+
+        // TAHAP 2: User menekan "LANJUTKAN" (Pindah ke soal berikutnya)
+        currentQuestionIndex++; // Naikkan indeks soal
+        isCheckingAnswer = true; // Reset kembali status ke mode pengecekan
+        btnNext.innerText = "CEK JAWABAN"; // Kembalikan teks tombol awal
+
+        if (currentQuestionIndex >= totalQuestions) {
+            showResultScreen(); // Jika soal habis, tampilkan skor akhir
         } else {
-            document.getElementById('progress-fill').style.width = `100%`;
-            showFinishScreen();
+            renderCurrentQuestion(); // Tampilkan soal baru berikutnya
         }
     }
 
@@ -446,6 +541,131 @@
             </div>
         `;
         document.getElementById('loading-text').style.display = 'block';
+    }
+
+    // Fungsi untuk menentukan pool/daftar tipe soal yang tersedia untuk node tertentu
+    function getQuestionTypesForNode(nodeNumber) {
+        if (nodeNumber >= 1 && nodeNumber <= 4) {
+            return ['sambung_ayat', 'lengkapi_multi', 'ayat_sesudah'];
+        } else if (nodeNumber >= 5 && nodeNumber <= 8) {
+            return ['ayat_sebelum', 'tebak_nomor', 'tebak_sequence', 'ikrab'];
+        } else { // Node 9 & 10 (Boss Level)
+            return [
+                'sambung_ayat', 'lengkapi_multi', 'ayat_sesudah', 
+                'ayat_sebelum', 'tebak_nomor', 'tebak_sequence', 'ikrab'
+            ];
+        }
+    }
+
+    function generateLengkapiMulti(ayahText) {
+        let words = ayahText.split(' ');
+        // Tentukan berapa kata yang mau dihilangkan (misal 2 atau 3)
+        let blanksCount = Math.min(3, Math.floor(words.length / 3)); 
+        let hiddenIndices = [];
+        
+        // Pilih index acak untuk dikosongkan
+        while(hiddenIndices.length < blanksCount) {
+            let rand = Math.floor(Math.random() * words.length);
+            if(!hiddenIndices.includes(rand)) hiddenIndices.push(rand);
+        }
+
+        let answers = [];
+        hiddenIndices.forEach(idx => {
+            answers.push(words[idx]); // Simpan jawaban asli
+            words[idx] = '____';      // Ganti kata di ayat dengan garis bawah
+        });
+
+        // Ambil kata acak dari ayat lain/sekitar sebagai pengecoh (distractor)
+        let distractors = ['اللَّهُ', 'عَذَابٌ', 'بَنِي']; // Contoh statis, baiknya ambil dari database
+        let options = [...answers, ...distractor].sort(() => Math.random() - 0.5);
+
+        return {
+            type: 'lengkapi_multi',
+            question: words.join(' '), // Ayat yang sudah rumpang
+            options: options,
+            correctAnswers: answers // Urutan jawaban yang benar
+        };
+    }
+
+    function generateTebakNomor(ayahObj) {
+        let correctNum = ayahObj.numberInSurah;
+        // Buat pilihan: [Benar, Benar+1, Benar-1, Benar+2]
+        let options = [correctNum, correctNum + 1, Math.max(1, correctNum - 1), correctNum + 2];
+        
+        return {
+            type: 'tebak_nomor',
+            question: `Ayat berikut adalah ayat ke berapa?\n\n${ayahObj.text}`,
+            options: [...new Set(options)].sort(() => Math.random() - 0.5), // Acak
+            correctAnswer: correctNum
+        };
+    }
+
+    function generateTebakSequence(currentIndex, ayahsData) {
+        let questionAyah = ayahsData[currentIndex].text;
+        
+        // Jawaban Benar (Gabungan 2 ayat sesudahnya)
+        let correctSequence = ayahsData[currentIndex+1].text + " ۝ " + ayahsData[currentIndex+2].text;
+        
+        // Buat pengecoh (Gabungan ayat acak lain)
+        let distractor1 = ayahsData[currentIndex+3].text + " ۝ " + ayahsData[currentIndex+4].text;
+        
+        return {
+            type: 'tebak_sequence',
+            question: `Lanjutkan urutan 2 ayat setelah ayat ini:\n\n${questionAyah}`,
+            options: [correctSequence, distractor1].sort(() => Math.random() - 0.5),
+            correctAnswer: correctSequence
+        };
+    }
+
+    function generateIkrab(ayahText) {
+        let words = ayahText.split(' ');
+        let targetWord = words[words.length - 1]; // Ambil kata terakhir
+        
+        // Regex huruf Arab + buang harakat akhir (Fathatan, Dammatan, Kasratan, Fatha, Damma, Kasra)
+        let baseWord = targetWord.replace(/[\u064B-\u0650]$/, ''); 
+        
+        // Buat pilihan berharakat beda (Fathah, Kasrah, Dammah)
+        let options = [
+            baseWord + '\u064E', // Fathah (ـَ)
+            baseWord + '\u0650', // Kasrah (ـِ)
+            baseWord + '\u064F', // Dammah (ـُ)
+            baseWord + '\u064C'  // Dammatan (ـٌ) - Asumsi jawaban benar
+        ];
+        
+        return {
+            type: 'ikrab',
+            question: `Pilih harakat akhir (I'rab) yang tepat untuk kata yang digarisbawahi:\n\n${words.slice(0, -1).join(' ')} _____`,
+            options: options,
+            correctAnswer: targetWord // Kata asli dari database
+        };
+    }
+
+    // Logika JavaScript untuk interaksi isi kolom rumpang
+    function selectWord(btnElement) {
+        // 1. Cari slot titik-titik ('_____') pertama di dalam area pertanyaan yang belum terisi
+        const emptySlots = Array.from(document.querySelectorAll('.blank-slot')).filter(slot => slot.innerText === '_____');
+        
+        if (emptySlots.length > 0) {
+            let targetSlot = emptySlots[0];
+            
+            // 2. Pindahkan teks Arab dari tombol pilihan ke dalam slot kosong tersebut
+            targetSlot.innerText = btnElement.innerText;
+            targetSlot.classList.add('filled'); // Beri style kotak putih menandakan sudah terisi
+            
+            // Simpan ID/referensi tombol asal di data-attribute slot untuk fitur pembatalan
+            targetSlot.dataset.sourceId = btnElement.id; 
+            
+            // 3. Pasang fitur pembatalan: Jika slot yang sudah terisi diklik lagi oleh user, kata dikembalikan ke bawah
+            targetSlot.onclick = function() {
+                this.innerText = '_____';
+                this.classList.remove('filled');
+                document.getElementById(this.dataset.sourceId).style.visibility = 'visible'; // Munculkan tombol bawah lagi
+                this.onclick = null; // Hapus listener pembatalan
+            };
+            
+            // 4. Sembunyikan kata di word-bank bawah agar tidak dipilih dua kali (gunakan visibility agar layout tidak bergeser)
+            btnElement.style.visibility = 'hidden'; 
+        }
     }
 </script>
 </body>

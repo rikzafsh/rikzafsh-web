@@ -18,10 +18,16 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 Profil Saya
             </a>
+            
             <?php if (auth()->user()->inGroup('developer')): ?>
             <a href="/dashboard/users" style="display: flex; align-items: center; gap: 12px; padding: 12px; color: #495057; text-decoration: none; border-radius: 6px; margin-bottom: 6px; font-weight: 500; <?= url_is('dashboard/users*') ? 'background-color: var(--theme-primary, #6f42c1); color: #ffffff; font-weight: bold;' : '' ?>">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 Kelola Pengguna
+            </a>
+            
+            <a href="/dashboard/projects" style="display: flex; align-items: center; gap: 12px; padding: 12px; color: #495057; text-decoration: none; border-radius: 6px; margin-bottom: 6px; font-weight: 500; <?= url_is('dashboard/projects*') ? 'background-color: var(--theme-primary, #6f42c1); color: #ffffff; font-weight: bold;' : '' ?>">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                Kelola Proyek
             </a>
             <?php endif; ?>
         </nav>
