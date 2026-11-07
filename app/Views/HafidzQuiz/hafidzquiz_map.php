@@ -56,7 +56,10 @@
 <body>
 
 <div class="sidebar">
-    <div class="sidebar-header">HafidzQuiz</div>
+    <div class="sidebar-header">
+        <a href="/">Back</a>
+        HafidzQuiz
+    </div>
     <table class="nav-table" id="nav-table"></table>
 </div>
 
