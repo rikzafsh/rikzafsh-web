@@ -10,7 +10,7 @@
     
     <div style="display: grid; grid-template-columns: 350px 1fr; gap: 30px; align-items: start;">
         
-        <div style="background: #ffffff; padding: 35px 20px; border: 1px solid #e3e6f0; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <div style="background: #ffffff; padding: 35px 20px; border: 1px solid #e3e6f0; border-radius: 6px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
             <div style="position: relative; display: inline-block; margin-bottom: 15px;">
                 <?php 
                     // Jika user punya file foto di database, pakai itu. Jika tidak, pakai UI-Avatars.
@@ -25,13 +25,13 @@
             
             <div style="display: flex; justify-content: center; gap: 6px; margin-bottom: 15px;">
                 <?php if ($user->inGroup('developer')): ?>
-                    <span style="background: rgba(188, 132, 238, 0.15); color: #703996; padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase;">Developer</span>
+                    <span style="background: rgba(188, 132, 238, 0.15); color: #703996; padding: 4px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase;">Developer</span>
                 <?php elseif ($user->inGroup('admin')): ?>
-                    <span style="background: rgba(41, 170, 254, 0.15); color: #3a43e0; padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase;">Admin</span>
+                    <span style="background: rgba(41, 170, 254, 0.15); color: #3a43e0; padding: 4px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase;">Admin</span>
                 <?php elseif ($user->inGroup('superuser')): ?>
-                    <span style="background: rgba(245, 158, 11, 0.15); color: #009339; padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase;">Superuser</span>
+                    <span style="background: rgba(245, 158, 11, 0.15); color: #009339; padding: 4px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase;">Superuser</span>
                 <?php else: ?>
-                    <span style="background: rgba(100, 116, 139, 0.15); color: #64748b; padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase;">User</span>
+                    <span style="background: rgba(100, 116, 139, 0.15); color: #64748b; padding: 4px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: bold; text-transform: uppercase;">User</span>
                 <?php endif; ?>
             </div>
 
@@ -44,7 +44,7 @@
             </p>
         </div>
         
-        <div style="background: #ffffff; padding: 30px; border: 1px solid #e3e6f0; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e3e6f0; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
             <form action="<?= base_url('dashboard/profil/update') ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field() ?>
                 

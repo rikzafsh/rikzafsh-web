@@ -1,49 +1,44 @@
 <?php
 /**
- * Kartu artikel (dipakai di beranda, daftar artikel, profil, dan artikel terkait).
+ * Kartu artikel untuk grid (daftar artikel, profil, artikel terkait).
+ * Jika artikel tidak punya gambar, kartu tampil sebagai teks saja.
  *
  * @var array $art Baris hasil ArtikelModel::kartu()
  */
 $url    = base_url('artikel/' . $art['slug']);
 $nama   = nama_tampil($art['full_name'] ?? '', $art['username'] ?? '');
-$warna  = safe_color($art['kat_colour'] ?? null, '#29aafe');
+$warna  = safe_color($art['kat_colour'] ?? null, '#703996');
 $gambar = ! empty($art['thumbnail'])
     ? 'uploads/artikel/' . $art['thumbnail']
     : (! empty($art['cover_image']) ? 'uploads/kategori/' . $art['cover_image'] : null);
 $draf   = isset($art['status']) && $art['status'] !== 'published';
 ?>
 <article class="post-card">
-    <a class="post-card__media" href="<?= esc($url, 'attr') ?>" tabindex="-1" aria-hidden="true">
-        <?php if ($gambar): ?>
+    <?php if ($gambar): ?>
+        <a class="post-card__media" href="<?= esc($url, 'attr') ?>" tabindex="-1" aria-hidden="true">
             <img src="<?= esc(base_url($gambar), 'attr') ?>" alt="" loading="lazy">
-        <?php else: ?>
-            <div class="post-card__placeholder" style="--ph: <?= $warna ?>"><?= esc(mb_strtoupper(mb_substr($art['judul'], 0, 1, 'UTF-8'), 'UTF-8')) ?></div>
-        <?php endif ?>
-        <?php if (! empty($art['nama_kategori'])): ?>
-            <span class="badge post-card__badge" style="background: <?= $warna ?>"><?= esc($art['nama_kategori']) ?></span>
-        <?php endif ?>
-    </a>
+        </a>
+    <?php endif ?>
 
     <div class="post-card__body">
-        <h3 class="post-card__title">
-            <a href="<?= esc($url, 'attr') ?>"><?= esc($art['judul']) ?></a>
+        <div>
+            <?php if (! empty($art['nama_kategori'])): ?>
+                <a class="kicker" style="--kat: <?= $warna ?>" href="<?= esc(base_url('artikel?kategori=' . rawurlencode((string) $art['kat_slug'])), 'attr') ?>"><?= esc($art['nama_kategori']) ?></a>
+            <?php endif ?>
             <?php if ($draf): ?><span class="badge badge--warning">Draf</span><?php endif ?>
-        </h3>
+        </div>
+
+        <h3 class="post-card__title"><a href="<?= esc($url, 'attr') ?>"><?= esc($art['judul']) ?></a></h3>
         <p class="post-card__excerpt"><?= esc(ringkasan($art['konten'], 160)) ?></p>
 
-        <div class="post-card__foot">
+        <div class="meta-line">
             <?php if (! empty($art['username'])): ?>
-                <a class="post-card__author" href="<?= esc(base_url('profile/' . rawurlencode($art['username'])), 'attr') ?>">
-                    <?= avatar_html($art['avatar'] ?? null, $nama, 'xs') ?>
-                    <span><?= esc($nama) ?></span>
+                <a class="meta-author" href="<?= esc(base_url('profile/' . rawurlencode($art['username'])), 'attr') ?>">
+                    <?= avatar_html($art['avatar'] ?? null, $nama, 'xs') ?> <?= esc($nama) ?>
                 </a>
-            <?php else: ?>
-                <span></span>
             <?php endif ?>
-            <span class="post-card__meta">
-                <span class="meta-item" title="Perkiraan waktu baca"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><?= waktu_baca($art['konten']) ?> mnt</span>
-                <span class="meta-item" title="<?= esc(tgl_indo($art['created_at'], true), 'attr') ?>"><?= esc(tgl_indo($art['created_at'])) ?></span>
-            </span>
+            <span class="dot" title="<?= esc(tgl_indo($art['created_at'], true), 'attr') ?>"><?= esc(tgl_indo($art['created_at'])) ?></span>
+            <span class="dot"><?= waktu_baca($art['konten']) ?> mnt baca</span>
         </div>
     </div>
 </article>

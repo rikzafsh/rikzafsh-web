@@ -10,7 +10,7 @@ $sapaan    = $jam < 11 ? 'Selamat pagi' : ($jam < 15 ? 'Selamat siang' : ($jam <
 
 <div class="page-head">
     <div>
-        <h1><?= esc($sapaan) ?>, <?= esc($nama) ?> 👋</h1>
+        <h1><?= esc($sapaan) ?>, <?= esc($nama) ?></h1>
         <p>Berikut ringkasan aktivitas tulisanmu.</p>
     </div>
     <a class="btn btn--primary" href="<?= base_url('dashboard/artikel/tambah') ?>">+ Tulis Artikel Baru</a>

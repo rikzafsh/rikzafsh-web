@@ -185,9 +185,9 @@ $ikonSimpan   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
                                 <td>
                                     <div class="flex items-center gap-8">
                                         <?php if (! empty($k['cover_image'])): ?>
-                                            <img src="<?= esc(base_url('uploads/kategori/' . $k['cover_image']), 'attr') ?>" alt="" style="width: 44px; height: 44px; border-radius: 10px; object-fit: cover;">
+                                            <img src="<?= esc(base_url('uploads/kategori/' . $k['cover_image']), 'attr') ?>" alt="" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
                                         <?php else: ?>
-                                            <span class="avatar avatar--md avatar--initial" style="background: <?= $warnaK ?>; border-radius: 10px;"><?= esc(mb_strtoupper(mb_substr($k['nama_kategori'], 0, 1, 'UTF-8'), 'UTF-8')) ?></span>
+                                            <span class="avatar avatar--md avatar--initial" style="background: <?= $warnaK ?>; border-radius: 6px;"><?= esc(mb_strtoupper(mb_substr($k['nama_kategori'], 0, 1, 'UTF-8'), 'UTF-8')) ?></span>
                                         <?php endif ?>
                                         <div>
                                             <a class="cell-title" href="<?= esc(base_url('artikel?kategori=' . rawurlencode((string) $k['slug'])), 'attr') ?>"><?= esc($k['nama_kategori']) ?></a>

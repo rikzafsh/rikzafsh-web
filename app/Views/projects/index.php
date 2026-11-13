@@ -6,7 +6,7 @@
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px;">
         
         <?php foreach($majalah as $mjl): ?>
-        <div style="border: 1px solid #eef2f5; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); background: #fff; display: flex; flex-direction: column;">
+        <div style="border: 1px solid #eef2f5; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); background: #fff; display: flex; flex-direction: column;">
             
             <img src="<?= base_url('uploads/covers/' . ($mjl['cover_img'] ?? '')) ?>" alt="Cover" style="width: 100%; height: 380px; object-fit: cover; border-bottom: 4px solid <?= safe_color($mjl['warna'] ?? null, '#29AAFE') ?>;" onerror="this.src='https://placehold.co/300x400?text=No+Cover'">
 

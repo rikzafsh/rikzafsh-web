@@ -1,7 +1,7 @@
 <?= $this->extend('layout/dashboard_template') ?>
 
 <?= $this->section('dashboard_content') ?>
-<div style="background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 30px;">
+<div style="background: #ffffff; border-radius: 6px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 30px;">
     
     <div style="margin-bottom: 25px;">
         <h2 style="margin: 0; color: #1e293b; font-size: 1.6rem; font-weight: 700;">Kelola Pengguna</h2>
