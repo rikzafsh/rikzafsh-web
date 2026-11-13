@@ -22,7 +22,7 @@ $actionUrl = $isEdit ? "/dashboard/kategori/update/{$kategori['id']}" : "/dashbo
         <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
             <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
             <?php foreach (session()->getFlashdata('errors') as $error) : ?>
-                <li><?= $error ?></li>
+                <li><?= esc($error) ?></li>
             <?php endforeach ?>
             </ul>
         </div>
@@ -49,7 +49,7 @@ $actionUrl = $isEdit ? "/dashboard/kategori/update/{$kategori['id']}" : "/dashbo
             <?php if ($isEdit && !empty($kategori['cover_image'])): ?>
                 <div style="margin-bottom: 10px;">
                     <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #718096;">Cover saat ini:</p>
-                    <img src="/uploads/kategori/<?= $kategori['cover_image'] ?>" style="width: 150px; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    <img src="/uploads/kategori/<?= esc($kategori['cover_image']) ?>" style="width: 150px; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;">
                 </div>
             <?php endif; ?>
             <input type="file" name="cover_image" accept="image/*" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background: #f8fafc; box-sizing: border-box;">

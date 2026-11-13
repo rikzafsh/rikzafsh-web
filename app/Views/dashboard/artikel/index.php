@@ -79,12 +79,12 @@ if ($isAdminOrDev) {
                         <?php foreach ($artikel as $a): ?>
                         <tr style="border-bottom: 1px solid #edf2f7;">
                             <td style="padding: 16px 12px; max-width: 250px; line-height: 1.4;">
-                                <a href="/artikel/<?= $a['slug'] ?>" style="text-decoration: none; color: #4a5568;">
+                                <a href="/artikel/<?= esc($a['slug']) ?>" style="text-decoration: none; color: #4a5568;">
                                 <?= esc($a['judul']) ?>
                                 </a>
                             </td>
                             <td style="padding: 16px 12px;">
-                                <span style="color:<?= esc($a['colour'] ?? '#718096') ?>; background:<?= esc($a['colour'] ?? '#718096') ?>20; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; border: 1px solid <?= esc($a['colour'] ?? '#718096') ?>50; font-weight: 600;"><?= esc($a['nama_kategori'] ?? 'Umum') ?></span>
+                                <span style="color:<?= safe_color($a['colour'] ?? null, '#718096') ?>; background:<?= safe_color($a['colour'] ?? null, '#718096') ?>20; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; border: 1px solid <?= esc($a['colour'] ?? '#718096') ?>50; font-weight: 600;"><?= esc($a['nama_kategori'] ?? 'Umum') ?></span>
                             </td>
                             <td style="padding: 16px 12px; text-align: center; color: #4a5568;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> <?= number_format($a['views']) ?>
@@ -98,7 +98,7 @@ if ($isAdminOrDev) {
                             <td style="padding: 16px 12px; color: #718096; font-size: 0.9rem; white-space: nowrap;"><?= date('d M Y H:i', strtotime($a['created_at'])) ?></td>
                             <td style="padding: 16px 12px; text-align: center; white-space: nowrap;">
                                 <a href="/dashboard/artikel/edit/<?= $a['id'] ?>" style="background: #ffc107; color: #000; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem; margin-right: 5px;">Edit</a>
-                                <a href="/dashboard/artikel/hapus/<?= $a['id'] ?>" style="background: #dc3545; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem;" onclick="return confirm('Hapus artikel?')">Hapus</a>
+                                <form action="/dashboard/artikel/hapus/<?= $a['id'] ?>" method="post" style="display: inline; margin: 0;" onsubmit="return confirm('Hapus artikel?')"><?= csrf_field() ?><button type="submit" style="background: #dc3545; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem; border: none; cursor: pointer; font-family: inherit;">Hapus</button></form>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -137,7 +137,7 @@ if ($isAdminOrDev) {
                             <td style="padding: 16px 12px;"><a href="/artikel?kategori=<?= esc($sa['kat_slug'] ?? '') ?>" style="text-decoration: none;"><span style="background-color: <?= esc($sa['kat_colour'] ?? '#718096') ?>18; color: <?= esc($sa['kat_colour'] ?? '#718096') ?>; padding: 5px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: 700; border: 1px solid <?= esc($sa['kat_colour'] ?? '#718096') ?>30;"><?= esc($sa['nama_kategori'] ?? 'Umum') ?></span></a></td>
                             <td style="padding: 16px 12px; text-align: center; color: #4a5568;"><?= number_format($sa['views']) ?></td>
                             <td style="padding: 16px 12px; color: #718096; font-size: 0.9rem;"><?= date('d M Y', strtotime($sa['created_at'])) ?></td>
-                            <td style="padding: 16px 12px; text-align: center;"><a href="/dashboard/artikel/hapus/<?= $sa['id'] ?>" style="background: #dc3545; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem;" onclick="return confirm('Hapus artikel?')">Hapus</a></td>
+                            <td style="padding: 16px 12px; text-align: center;"><form action="/dashboard/artikel/hapus/<?= $sa['id'] ?>" method="post" style="display: inline; margin: 0;" onsubmit="return confirm('Hapus artikel?')"><?= csrf_field() ?><button type="submit" style="background: #dc3545; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem; border: none; cursor: pointer; font-family: inherit;">Hapus</button></form></td>
                         </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -173,7 +173,7 @@ if ($isAdminOrDev) {
                             <td style="padding: 16px 12px;">
                                 <div style="display: flex; gap: 15px; align-items: center;">
                                     <?php if (!empty($k['cover_image'])): ?>
-                                        <img src="/uploads/kategori/<?= $k['cover_image'] ?>" alt="Cover" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #edf2f7;">
+                                        <img src="/uploads/kategori/<?= esc($k['cover_image']) ?>" alt="Cover" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #edf2f7;">
                                     <?php else: ?>
                                         <div style="width: 60px; height: 40px; background: #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.75rem; font-weight: bold;">No Img</div>
                                     <?php endif; ?>
@@ -191,14 +191,14 @@ if ($isAdminOrDev) {
                             </td>
                             <td style="padding: 16px 12px;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <?php $hexColor = esc($k['colour'] ?? '#cbd5e1'); ?>
+                                    <?php $hexColor = safe_color($k['colour'] ?? null, '#cbd5e1'); ?>
                                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: <?= $hexColor ?>; border: 1px solid #cbd5e1;"></div>
                                     <span style="font-family: monospace; font-size: 0.85rem; color: #4a5568; background: #edf2f7; padding: 2px 6px; border-radius: 4px;"><?= strtoupper($hexColor) ?></span>
                                 </div>
                             </td>
                             <td style="padding: 16px 12px; text-align: center; white-space: nowrap;">
                                 <a href="/dashboard/kategori/edit/<?= $k['id'] ?>" style="display: inline-flex; background: #f59e0b; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem; margin-right: 6px;">Edit</a>
-                                <a href="/dashboard/kategori/hapus/<?= $k['id'] ?>" style="display: inline-flex; background: #ef4444; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem;" onclick="return confirm('Hapus kategori ini?')">Hapus</a>
+                                <form action="/dashboard/kategori/hapus/<?= $k['id'] ?>" method="post" style="display: inline; margin: 0;" onsubmit="return confirm('Hapus kategori ini?')"><?= csrf_field() ?><button type="submit" style="display: inline-flex; background: #ef4444; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem; border: none; cursor: pointer; font-family: inherit;">Hapus</button></form>
                             </td>
                         </tr>
                         <?php endforeach; ?>

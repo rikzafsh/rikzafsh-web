@@ -30,7 +30,7 @@ $actionUrl = $isEdit ? "/dashboard/artikel/update/{$artikel['id']}" : "/dashboar
         <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
             <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
             <?php foreach (session()->getFlashdata('errors') as $error) : ?>
-                <li><?= $error ?></li>
+                <li><?= esc($error) ?></li>
             <?php endforeach ?>
             </ul>
         </div>
@@ -68,7 +68,7 @@ $actionUrl = $isEdit ? "/dashboard/artikel/update/{$artikel['id']}" : "/dashboar
             <?php if ($isEdit && !empty($artikel['thumbnail'])): ?>
                 <div style="margin-bottom: 10px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; display: inline-block;">
                     <p style="margin: 0 0 8px 0; font-size: 0.8rem; color: #718096;">Gambar saat ini:</p>
-                    <img src="/uploads/artikel/<?= $artikel['thumbnail'] ?>" alt="Thumbnail" style="max-width: 200px; height: auto; border-radius: 4px; display: block;">
+                    <img src="/uploads/artikel/<?= esc($artikel['thumbnail']) ?>" alt="Thumbnail" style="max-width: 200px; height: auto; border-radius: 4px; display: block;">
                 </div>
             <?php endif; ?>
             

@@ -16,7 +16,7 @@
         <select name="kategori" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
             <option value="">Semua Kategori</option>
             <?php foreach ($semua_kategori as $kat): ?>
-                <option value="<?= $kat['slug'] ?>" <?= $kategori_aktif == $kat['slug'] ? 'selected' : '' ?>><?= esc($kat['nama_kategori']) ?></option>
+                <option value="<?= esc($kat['slug']) ?>" <?= $kategori_aktif == $kat['slug'] ? 'selected' : '' ?>><?= esc($kat['nama_kategori']) ?></option>
             <?php endforeach; ?>
         </select>
     </div>
@@ -54,7 +54,7 @@
         <?php foreach ($daftar_artikel as $art): ?>
             <article style="background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
                 
-                <a href="/artikel/<?= $art['slug'] ?>" style="display: block; overflow: hidden;">
+                <a href="/artikel/<?= esc($art['slug']) ?>" style="display: block; overflow: hidden;">
                     <?php if (!empty($art['thumbnail'])): ?>
                         <img src="<?= base_url('uploads/artikel/' . $art['thumbnail']) ?>" alt="Thumbnail Artikel" style="width: 100%; height: 180px; object-fit: cover; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
 
@@ -68,24 +68,24 @@
 
                 <div style="padding: 20px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
-                        <a href="/artikel?kategori=<?= $art['kat_slug'] ?>" style="background: <?= esc($art['kat_colour']) ?>; color: #fff; font-size: 0.75em; padding: 4px 10px; border-radius: 20px; font-weight: bold; text-transform: uppercase; text-decoration: none; display: inline-block;">
+                        <a href="/artikel?kategori=<?= urlencode((string) $art['kat_slug']) ?>" style="background: <?= safe_color($art['kat_colour'] ?? null, '#29aafe') ?>; color: #fff; font-size: 0.75em; padding: 4px 10px; border-radius: 20px; font-weight: bold; text-transform: uppercase; text-decoration: none; display: inline-block;">
                             <?= esc($art['nama_kategori']) ?>
                         </a>
                         
                         <h3 style="margin: 15px 0 10px 0; font-size: 1.25em;">
-                            <a href="/artikel/<?= $art['slug'] ?>" style="color: var(--theme-text); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent)'" onmouseout="this.style.color='var(--theme-text)'">
+                            <a href="/artikel/<?= esc($art['slug']) ?>" style="color: var(--theme-text); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent)'" onmouseout="this.style.color='var(--theme-text)'">
                                 <?= esc($art['judul']) ?>
                             </a>
                         </h3>
                         
                         <p style="color: #666; font-size: 0.9em; line-height: 1.5; margin-bottom: 15px;">
-                            <?= strip_tags(substr($art['konten'], 0, 120)) ?>...
+                            <?= esc(mb_substr(trim(strip_tags($art['konten'])), 0, 120)) ?>...
                         </p>
                     </div>
 
                     <div style="border-top: 1px solid #eee; padding-top: 10px; font-size: 0.8em; color: #777; display: flex; justify-content: space-between; align-items: center;">
                         <span>Oleh: 
-                            <a href="/artikel?penulis=<?= $art['username'] ?>" style="color: var(--theme-button); font-weight: bold; text-decoration: none;">
+                            <a href="/artikel?penulis=<?= urlencode((string) $art['username']) ?>" style="color: var(--theme-button); font-weight: bold; text-decoration: none;">
                                 <?= esc(!empty($art['full_name']) ? $art['full_name'] : $art['username']) ?>
                             </a>
                         </span>

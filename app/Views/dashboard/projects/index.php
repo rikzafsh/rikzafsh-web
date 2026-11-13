@@ -57,14 +57,14 @@
                             <td style="padding: 16px 12px; color: #4a5568;"><?= esc($mjl['periode_teks']) ?></td>
                             <td style="padding: 16px 12px;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <?php $hexColor = esc($mjl['warna'] ?? '#29AAFE'); ?>
+                                    <?php $hexColor = safe_color($mjl['warna'] ?? null, '#29AAFE'); ?>
                                     <div style="width: 24px; height: 24px; border-radius: 50%; background-color: <?= $hexColor ?>; border: 1px solid #cbd5e1;"></div>
                                     <span style="font-family: monospace; font-size: 0.85rem; color: #4a5568; background: #edf2f7; padding: 2px 6px; border-radius: 4px;"><?= strtoupper($hexColor) ?></span>
                                 </div>
                             </td>
                             <td style="padding: 16px 12px; text-align: center; white-space: nowrap;">
-                                <button onclick='openEditModal(<?= json_encode($mjl) ?>)' style="display: inline-flex; border: none; background: #f59e0b; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem; margin-right: 6px; cursor: pointer;">Edit</button>
-                                <a href="<?= base_url('dashboard/projects/pustaka/hapus/' . $mjl['id']) ?>" style="display: inline-flex; background: #ef4444; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem;" onclick="return confirm('Hapus edisi majalah ini?')">Hapus</a>
+                                <button onclick='openEditModal(<?= esc(json_encode($mjl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT), 'attr') ?>)' style="display: inline-flex; border: none; background: #f59e0b; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem; margin-right: 6px; cursor: pointer;">Edit</button>
+                                <form action="<?= base_url('dashboard/projects/pustaka/hapus/' . $mjl['id']) ?>" method="post" style="display: inline; margin: 0;" onsubmit="return confirm('Hapus edisi majalah ini?')"><?= csrf_field() ?><button type="submit" style="display: inline-flex; background: #ef4444; color: white; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem; border: none; cursor: pointer; font-family: inherit;">Hapus</button></form>
                             </td>
                         </tr>
                         <?php endforeach; ?>

@@ -2,7 +2,7 @@
 <?= $this->section('dashboard_content') ?>
 <div class="dashboard-container" style="padding: 20px;">
     <h2>Beranda Dashboard</h2>
-    <p>Selamat datang kembali, <strong><?= auth()->user()->username ?></strong>!</p>
+    <p>Selamat datang kembali, <strong><?= esc(auth()->user()->username) ?></strong>!</p>
 
     <div style="display: flex; gap: 20px; margin-top: 20px;">
         <div style="background: #f4f6f9; padding: 20px; border-radius: 8px; flex: 1; border: 1px solid #ddd;">

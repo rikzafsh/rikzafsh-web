@@ -22,7 +22,7 @@ class Projects extends BaseController
             // ----------------------------------
             
             // --- GENERATE EMBED LINK OTOMATIS ---
-            $linkAsli = $item['link'] ?? '';
+            $linkAsli = safe_url($item['link'] ?? '');
             if (strpos($linkAsli, 'drive.google.com/file/d/') !== false) {
                 $item['embed_link'] = preg_replace('/\/view(.*)$/', '/preview', $linkAsli);
             } else {

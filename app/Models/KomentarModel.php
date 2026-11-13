@@ -8,7 +8,10 @@ class KomentarModel extends Model {
     protected $useTimestamps = true;
 
     public function getKomentarByArtikel($artikel_id, $current_user_id = "NULL") {
-        
+
+        // Pastikan id pengguna berupa angka (atau NULL) karena disambung langsung ke SQL
+        $current_user_id = is_numeric($current_user_id) ? (int) $current_user_id : 'NULL';
+
         // PERBAIKAN: Mengganti kutip ganda menjadi \' dan menambahkan false di akhir select()
         return $this->select('komentar.*, users.username, users.full_name, users.avatar,
             (SELECT COUNT(*) FROM komentar_reaksi WHERE komentar_id = komentar.id AND jenis = \'like\') as total_like,

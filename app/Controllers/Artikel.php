@@ -3,17 +3,67 @@
 namespace App\Controllers;
 
 use App\Models\ArtikelModel;
-use App\Models\KategoriModel; // Jangan lupa tambahkan ini!
+use App\Models\KategoriModel;
 
 class Artikel extends BaseController
 {
     protected $artikelModel;
-    protected $kategoriModel; // Tambahkan properti untuk model kategori
+    protected $kategoriModel;
 
     public function __construct()
     {
         $this->artikelModel  = new ArtikelModel();
-        $this->kategoriModel = new KategoriModel(); // Inisialisasi model kategori
+        $this->kategoriModel = new KategoriModel();
+    }
+
+    /**
+     * Admin/developer boleh mengelola semua artikel;
+     * user lain hanya artikel miliknya sendiri (kolom penulis_id).
+     */
+    private function bolehKelola(array $artikel): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->inGroup('admin', 'developer') || (int) $artikel['penulis_id'] === (int) $user->id;
+    }
+
+    private function adalahAdmin(): bool
+    {
+        $user = auth()->user();
+
+        return $user && $user->inGroup('admin', 'developer');
+    }
+
+    /**
+     * Membuat slug unik. $kecualiId dipakai saat update agar tidak bentrok dengan dirinya sendiri.
+     */
+    private function buatSlugUnik(string $judul, ?int $kecualiId = null): string
+    {
+        $dasar = mb_url_title($judul, '-', true);
+        if ($dasar === '') {
+            $dasar = 'artikel';
+        }
+
+        $slug = $dasar;
+        $i    = 2;
+
+        while (true) {
+            $query = $this->artikelModel->where('slug', $slug);
+            if ($kecualiId !== null) {
+                $query->where('id !=', $kecualiId);
+            }
+
+            if ($query->first() === null) {
+                return $slug;
+            }
+
+            $slug = $dasar . '-' . $i;
+            $i++;
+        }
     }
 
     // Menampilkan daftar artikel (Read)
@@ -96,332 +146,291 @@ class Artikel extends BaseController
         return view('dashboard/artikel/index', $data);
     }
 
-    // Menampilkan form tambah artikel (Create)
-    public function create()
-    {
-        return view('artikel/create');
-    }
-
-    // Menyimpan data ke database & upload gambar (Store)
-    public function store()
-    {
-        // 1. Ambil file gambar
-        $fileGambar = $this->request->getFile('thumbnail');
-        $namaGambar = null;
-
-        // 2. Cek apakah ada gambar yang diupload
-        if ($fileGambar && $fileGambar->isValid() && ! $fileGambar->hasMoved()) {
-            $namaGambar = $fileGambar->getRandomName(); // Bikin nama file acak
-            $fileGambar->move('uploads/artikel', $namaGambar); // Pindahkan ke folder public/uploads/artikel
-        }
-
-        // 3. Bikin Slug (URL ramah) dari Judul (contoh: "Halo Budi" jadi "halo-budi")
-        $slug = url_title($this->request->getPost('judul'), '-', true);
-
-        // 4. Simpan ke database
-        $this->artikelModel->save([
-            'judul'      => $this->request->getPost('judul'),
-            'slug'       => $slug,
-            'konten'     => $this->request->getPost('konten'),
-            'kategori'   => $this->request->getPost('kategori'),
-            'thumbnail'  => $namaGambar,
-            'penulis_id' => auth()->id(), // Ambil ID user yang sedang login
-        ]);
-
-        return redirect()->to('/dashboard/artikel')->with('pesan', 'Artikel berhasil ditambahkan.');
-    }
-
     public function tambah()
     {
         $data = [
-            'title' => 'Tulis Artikel Baru',
-            'kategori' => $this->kategoriModel->findAll()
-        ];
-
-        return view('artikel/create', $data); 
-    }
-
-    /**
-     * Memproses Data Simpan Artikel Baru ke Database
-     */
-    public function simpan()
-    {
-        $rules = [
-            'judul'       => 'required|min_length[5]',
-            'kategori_id' => 'required',
-            'konten'      => 'required',
-            'thumbnail'   => 'max_size[thumbnail,2048]|is_image[thumbnail]|mime_in[thumbnail,image/jpg,image/jpeg,image/png]'
-        ];
-
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-        }
-
-        $fileThumbnail = $this->request->getFile('thumbnail');
-        $namaThumbnail = null;
-
-        if ($fileThumbnail && $fileThumbnail->isValid() && !$fileThumbnail->hasMoved()) {
-            $namaThumbnail = $fileThumbnail->getRandomName();
-            $fileThumbnail->move('uploads/artikel', $namaThumbnail);
-        }
-
-        $slug = url_title($this->request->getPost('judul'), '-', true);
-
-        $this->artikelModel->save([
-            'judul'       => $this->request->getPost('judul'),
-            'slug'        => $slug,
-            'kategori_id' => $this->request->getPost('kategori_id'),
-            'konten'      => $this->request->getPost('konten'),
-            'thumbnail'   => $namaThumbnail,
-            'penulis_id'     => auth()->id(), 
-        ]);
-
-        return redirect()->to('/dashboard/artikel')->with('message', 'Artikel berhasil dipublikasikan!');
-    }
-
-    /**
-     * Menampilkan Form Edit Artikel
-     */
-    public function edit($id)
-    {
-        $artikel = $this->artikelModel->find($id);
-
-        if (!$artikel) {
-            return redirect()->to('/dashboard/artikel')->with('error', 'Data artikel tidak ditemukan.');
-        }
-
-        // Cek apakah user ada sebelum mengecek grup
-        $user = auth()->user();
-        $isAdminOrDev = $user ? $user->inGroup('admin', 'developer') : false;
-        
-        // PERBAIKAN: Gunakan "??" agar tidak error jika kolom user_id tidak ada di database
-        // Jika nama kolom di database Anda berbeda (misal: 'id_user'), ubah kata 'user_id' di bawah ini
-        $idPenulis = $artikel['user_id'] ?? null;
-        
-        if ($idPenulis !== null && $idPenulis != auth()->id() && !$isAdminOrDev) {
-            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak memiliki akses untuk mengedit artikel ini.');
-        }
-
-        $data = [
-            'title'    => 'Edit Artikel',
-            'artikel'  => $artikel,
-            'kategori' => $this->kategoriModel->findAll()
+            'title'    => 'Tulis Artikel Baru',
+            'kategori' => $this->kategoriModel->findAll(),
         ];
 
         return view('artikel/create', $data);
     }
 
     /**
-     * Memproses Data Update Artikel ke Database
+     * Memproses data simpan artikel baru ke database
      */
-    public function update($id)
+    public function simpan()
     {
-        $artikelLama = $this->artikelModel->find($id);
-        
         $rules = [
-            'judul'       => 'required|min_length[5]',
-            'kategori_id' => 'required',
+            'judul'       => 'required|min_length[5]|max_length[200]',
+            'kategori_id' => 'required|is_natural_no_zero|is_not_unique[kategori.id]',
             'konten'      => 'required',
-            'thumbnail'   => 'max_size[thumbnail,2048]|is_image[thumbnail]|mime_in[thumbnail,image/jpg,image/jpeg,image/png]'
+            'thumbnail'   => 'max_size[thumbnail,2048]|is_image[thumbnail]|mime_in[thumbnail,image/jpg,image/jpeg,image/png]',
         ];
 
-        if (!$this->validate($rules)) {
+        if (! $this->validate($rules)) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
         $fileThumbnail = $this->request->getFile('thumbnail');
-        $namaThumbnail = $artikelLama['thumbnail']; 
+        $namaThumbnail = null;
 
-        if ($fileThumbnail && $fileThumbnail->isValid() && !$fileThumbnail->hasMoved()) {
-            if ($artikelLama['thumbnail'] && file_exists('uploads/artikel/' . $artikelLama['thumbnail'])) {
-                unlink('uploads/artikel/' . $artikelLama['thumbnail']);
-            }
+        if ($fileThumbnail && $fileThumbnail->isValid() && ! $fileThumbnail->hasMoved()) {
             $namaThumbnail = $fileThumbnail->getRandomName();
-            $fileThumbnail->move('uploads/artikel', $namaThumbnail);
+            $fileThumbnail->move(FCPATH . 'uploads/artikel', $namaThumbnail);
         }
 
-        $slug = url_title($this->request->getPost('judul'), '-', true);
+        $judul = trim((string) $this->request->getPost('judul'));
+
+        $this->artikelModel->save([
+            'judul'       => $judul,
+            'slug'        => $this->buatSlugUnik($judul),
+            'kategori_id' => (int) $this->request->getPost('kategori_id'),
+            'konten'      => sanitize_html($this->request->getPost('konten')),
+            'thumbnail'   => $namaThumbnail,
+            'penulis_id'  => auth()->id(),
+        ]);
+
+        return redirect()->to('/dashboard/artikel')->with('message', 'Artikel berhasil dipublikasikan!');
+    }
+
+    /**
+     * Menampilkan form edit artikel
+     */
+    public function edit($id)
+    {
+        $artikel = $this->artikelModel->find($id);
+
+        if (! $artikel) {
+            return redirect()->to('/dashboard/artikel')->with('error', 'Data artikel tidak ditemukan.');
+        }
+
+        if (! $this->bolehKelola($artikel)) {
+            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak memiliki akses untuk mengedit artikel ini.');
+        }
+
+        $data = [
+            'title'    => 'Edit Artikel',
+            'artikel'  => $artikel,
+            'kategori' => $this->kategoriModel->findAll(),
+        ];
+
+        return view('artikel/create', $data);
+    }
+
+    /**
+     * Memproses update artikel
+     */
+    public function update($id)
+    {
+        $artikelLama = $this->artikelModel->find($id);
+
+        if (! $artikelLama) {
+            return redirect()->to('/dashboard/artikel')->with('error', 'Data artikel tidak ditemukan.');
+        }
+
+        if (! $this->bolehKelola($artikelLama)) {
+            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak memiliki akses untuk mengedit artikel ini.');
+        }
+
+        $rules = [
+            'judul'       => 'required|min_length[5]|max_length[200]',
+            'kategori_id' => 'required|is_natural_no_zero|is_not_unique[kategori.id]',
+            'konten'      => 'required',
+            'thumbnail'   => 'max_size[thumbnail,2048]|is_image[thumbnail]|mime_in[thumbnail,image/jpg,image/jpeg,image/png]',
+        ];
+
+        if (! $this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        $fileThumbnail = $this->request->getFile('thumbnail');
+        $namaThumbnail = $artikelLama['thumbnail'];
+
+        if ($fileThumbnail && $fileThumbnail->isValid() && ! $fileThumbnail->hasMoved()) {
+            if ($artikelLama['thumbnail'] && is_file(FCPATH . 'uploads/artikel/' . $artikelLama['thumbnail'])) {
+                unlink(FCPATH . 'uploads/artikel/' . $artikelLama['thumbnail']);
+            }
+            $namaThumbnail = $fileThumbnail->getRandomName();
+            $fileThumbnail->move(FCPATH . 'uploads/artikel', $namaThumbnail);
+        }
+
+        $judul = trim((string) $this->request->getPost('judul'));
+
+        // Slug hanya berubah jika judul berubah, supaya tautan lama tidak rusak
+        $slug = ($judul === $artikelLama['judul'])
+            ? $artikelLama['slug']
+            : $this->buatSlugUnik($judul, (int) $id);
 
         $this->artikelModel->update($id, [
-            'judul'       => $this->request->getPost('judul'),
+            'judul'       => $judul,
             'slug'        => $slug,
-            'kategori_id' => $this->request->getPost('kategori_id'),
-            'konten'      => $this->request->getPost('konten'),
-            'thumbnail'   => $namaThumbnail
+            'kategori_id' => (int) $this->request->getPost('kategori_id'),
+            'konten'      => sanitize_html($this->request->getPost('konten')),
+            'thumbnail'   => $namaThumbnail,
         ]);
 
         return redirect()->to('/dashboard/artikel')->with('message', 'Perubahan artikel berhasil disimpan!');
     }
 
     /**
-     * Menghapus Artikel
+     * Menghapus artikel (hanya lewat POST)
      */
     public function hapus($id)
     {
         $artikel = $this->artikelModel->find($id);
 
-        if ($artikel) {
-            $user = auth()->user();
-            $isAdminOrDev = $user ? $user->inGroup('admin', 'developer') : false;
-
-            // PERBAIKAN SAMA: Gunakan "??"
-            $idPenulis = $artikel['user_id'] ?? null;
-
-            if ($idPenulis !== null && $idPenulis != auth()->id() && !$isAdminOrDev) {
-                return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak berhak menghapus artikel ini.');
-            }
-
-            if ($artikel['thumbnail'] && file_exists('uploads/artikel/' . $artikel['thumbnail'])) {
-                unlink('uploads/artikel/' . $artikel['thumbnail']);
-            }
-
-            $this->artikelModel->delete($id);
-            return redirect()->to('/dashboard/artikel')->with('message', 'Artikel berhasil dihapus.');
+        if (! $artikel) {
+            return redirect()->to('/dashboard/artikel')->with('error', 'Artikel gagal dihapus atau tidak ditemukan.');
         }
 
-        return redirect()->to('/dashboard/artikel')->with('error', 'Artikel gagal dihapus atau tidak ditemukan.');
-    }
-    
-    // Fitur Delete
-    public function delete($id)
-    {
+        if (! $this->bolehKelola($artikel)) {
+            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak berhak menghapus artikel ini.');
+        }
+
+        if ($artikel['thumbnail'] && is_file(FCPATH . 'uploads/artikel/' . $artikel['thumbnail'])) {
+            unlink(FCPATH . 'uploads/artikel/' . $artikel['thumbnail']);
+        }
+
         $this->artikelModel->delete($id);
-        return redirect()->to('/dashboard/artikel')->with('pesan', 'Artikel berhasil dihapus.');
+
+        return redirect()->to('/dashboard/artikel')->with('message', 'Artikel berhasil dihapus.');
     }
 
-    // 1. Tampilan Form Tambah Kategori
+    // ------------------------------------------------------------------
+    // KATEGORI (khusus admin/developer)
+    // ------------------------------------------------------------------
+
+    private function tolakJikaBukanAdmin()
+    {
+        if (! $this->adalahAdmin()) {
+            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak memiliki akses.');
+        }
+
+        return null;
+    }
+
     public function kategoriTambah()
     {
-        if (!auth()->user()->inGroup('admin', 'developer')) {
-            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak memiliki akses.');
+        if ($tolak = $this->tolakJikaBukanAdmin()) {
+            return $tolak;
         }
 
-        $data = [
+        return view('dashboard/kategori/form', [
             'title' => 'Tambah Kategori Baru | Ruang Rikza',
-        ];
-
-        return view('dashboard/kategori/form', $data);
+        ]);
     }
 
-    // 2. Proses Simpan Kategori Baru ke Database
     public function kategoriSimpan()
     {
-        if (!auth()->user()->inGroup('admin', 'developer')) {
-            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak memiliki akses.');
+        if ($tolak = $this->tolakJikaBukanAdmin()) {
+            return $tolak;
         }
 
-        // Aturan validasi input teks dan file gambar
         $rules = [
-            'nama_kategori' => 'required|is_unique[kategori.nama_kategori]',
-            'colour'        => 'required',
+            'nama_kategori' => 'required|max_length[100]|is_unique[kategori.nama_kategori]',
+            'colour'        => 'required|regex_match[/^#[0-9a-fA-F]{6}$/]',
             'cover_image'   => 'max_size[cover_image,2048]|is_image[cover_image]|mime_in[cover_image,image/jpg,image/jpeg,image/png,image/webp]',
         ];
 
-        if (!$this->validate($rules)) {
+        if (! $this->validate($rules)) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // Handle Upload Cover Image jika ada yang diupload
         $coverFile = $this->request->getFile('cover_image');
         $coverName = null;
-        if ($coverFile && $coverFile->isValid() && !$coverFile->hasMoved()) {
+        if ($coverFile && $coverFile->isValid() && ! $coverFile->hasMoved()) {
             $coverName = $coverFile->getRandomName();
             $coverFile->move(FCPATH . 'uploads/kategori', $coverName);
         }
 
-        // Buat slug otomatis
-        $slug = mb_url_title($this->request->getPost('nama_kategori'), '-', true);
-
         $this->kategoriModel->save([
-            'nama_kategori' => $this->request->getPost('nama_kategori'),
-            'slug'          => $slug,
+            'nama_kategori' => trim((string) $this->request->getPost('nama_kategori')),
+            'slug'          => mb_url_title($this->request->getPost('nama_kategori'), '-', true),
             'colour'        => $this->request->getPost('colour'),
             'cover_image'   => $coverName,
-            'deskripsi'     => $this->request->getPost('deskripsi')
+            'deskripsi'     => $this->request->getPost('deskripsi'),
         ]);
 
         return redirect()->to('/dashboard/artikel')->with('message', 'Kategori baru berhasil ditambahkan!');
     }
 
-    // 3. Tampilan Form Edit Kategori
     public function kategoriEdit($id)
     {
-        if (!auth()->user()->inGroup('admin', 'developer')) {
-            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak memiliki akses.');
+        if ($tolak = $this->tolakJikaBukanAdmin()) {
+            return $tolak;
         }
 
         $kategori = $this->kategoriModel->find($id);
-        if (!$kategori) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Kategori tidak ditemukan.");
+        if (! $kategori) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Kategori tidak ditemukan.');
         }
 
-        $data = [
+        return view('dashboard/kategori/form', [
             'title'    => 'Edit Kategori | Ruang Rikza',
-            'kategori' => $kategori
-        ];
-
-        return view('dashboard/kategori/form', $data);
+            'kategori' => $kategori,
+        ]);
     }
 
-    // 4. Proses Update Perubahan Kategori
     public function kategoriUpdate($id)
     {
-        if (!auth()->user()->inGroup('admin', 'developer')) {
-            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak memiliki akses.');
+        if ($tolak = $this->tolakJikaBukanAdmin()) {
+            return $tolak;
         }
 
         $kategori = $this->kategoriModel->find($id);
-        if (!$kategori) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Kategori tidak ditemukan.");
+        if (! $kategori) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Kategori tidak ditemukan.');
         }
 
+        $id = (int) $id;
+
         $rules = [
-            'nama_kategori' => "required|is_unique[kategori.nama_kategori,id,{$id}]",
-            'colour'        => 'required',
+            'nama_kategori' => "required|max_length[100]|is_unique[kategori.nama_kategori,id,{$id}]",
+            'colour'        => 'required|regex_match[/^#[0-9a-fA-F]{6}$/]',
             'cover_image'   => 'max_size[cover_image,2048]|is_image[cover_image]|mime_in[cover_image,image/jpg,image/jpeg,image/png,image/webp]',
         ];
 
-        if (!$this->validate($rules)) {
+        if (! $this->validate($rules)) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // Handle ganti Cover Image baru
         $coverFile = $this->request->getFile('cover_image');
-        $coverName = $kategori['cover_image']; // Pakai nama file lama sebagai default
+        $coverName = $kategori['cover_image'];
 
-        if ($coverFile && $coverFile->isValid() && !$coverFile->hasMoved()) {
+        if ($coverFile && $coverFile->isValid() && ! $coverFile->hasMoved()) {
             $coverName = $coverFile->getRandomName();
             $coverFile->move(FCPATH . 'uploads/kategori', $coverName);
 
-            // Hapus file cover lama dari server jika ada dan file lamanya eksis
-            if (!empty($kategori['cover_image']) && file_exists(FCPATH . 'uploads/kategori/' . $kategori['cover_image'])) {
+            if (! empty($kategori['cover_image']) && is_file(FCPATH . 'uploads/kategori/' . $kategori['cover_image'])) {
                 unlink(FCPATH . 'uploads/kategori/' . $kategori['cover_image']);
             }
         }
 
-        $slug = mb_url_title($this->request->getPost('nama_kategori'), '-', true);
-
         $this->kategoriModel->update($id, [
-            'nama_kategori' => $this->request->getPost('nama_kategori'),
-            'slug'          => $slug,
+            'nama_kategori' => trim((string) $this->request->getPost('nama_kategori')),
+            'slug'          => mb_url_title($this->request->getPost('nama_kategori'), '-', true),
             'colour'        => $this->request->getPost('colour'),
             'cover_image'   => $coverName,
-            'deskripsi'     => $this->request->getPost('deskripsi')
+            'deskripsi'     => $this->request->getPost('deskripsi'),
         ]);
 
         return redirect()->to('/dashboard/artikel')->with('message', 'Kategori berhasil diperbarui!');
     }
 
-    // 5. Proses Hapus Kategori
     public function kategoriHapus($id)
     {
-        if (!auth()->user()->inGroup('admin', 'developer')) {
-            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak memiliki akses.');
+        if ($tolak = $this->tolakJikaBukanAdmin()) {
+            return $tolak;
         }
 
         $kategori = $this->kategoriModel->find($id);
-        if (!$kategori) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Kategori tidak ditemukan.");
+        if (! $kategori) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Kategori tidak ditemukan.');
+        }
+
+        if (! empty($kategori['cover_image']) && is_file(FCPATH . 'uploads/kategori/' . $kategori['cover_image'])) {
+            unlink(FCPATH . 'uploads/kategori/' . $kategori['cover_image']);
         }
 
         $this->kategoriModel->delete($id);

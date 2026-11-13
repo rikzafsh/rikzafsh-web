@@ -105,21 +105,29 @@ class Dashboard extends BaseController
             return redirect()->to('/dashboard')->with('error', 'Aksi tidak diizinkan.');
         }
 
-        $userModel = auth()->getProvider();
-        $targetUser = $userModel->find($userId);
+        $roleValid = ['developer', 'admin', 'superuser', 'user'];
+        $newRole   = $this->request->getPost('role');
 
-        if ($targetUser) {
-            $newRole = $this->request->getPost('role');
-
-            // Hapus semua role lama agar tidak tumpang tindih
-            $targetUser->removeGroup('developer', 'admin', 'superuser', 'user');
-
-            // Tambahkan role baru
-            $targetUser->addGroup($newRole);
-
-            return redirect()->back()->with('message', 'Role ' . $targetUser->username . ' berhasil diubah menjadi ' . $newRole);
+        if (! in_array($newRole, $roleValid, true)) {
+            return redirect()->back()->with('error', 'Role tidak valid.');
         }
 
-        return redirect()->back()->with('error', 'Pengguna tidak ditemukan.');
+        // Mencegah developer mengunci dirinya sendiri dari sistem
+        if ((int) $userId === (int) auth()->id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat mengubah role akun Anda sendiri.');
+        }
+
+        $userModel  = auth()->getProvider();
+        $targetUser = $userModel->find($userId);
+
+        if (! $targetUser) {
+            return redirect()->back()->with('error', 'Pengguna tidak ditemukan.');
+        }
+
+        // Hapus semua role lama agar tidak tumpang tindih, lalu pasang role baru
+        $targetUser->removeGroup(...$roleValid);
+        $targetUser->addGroup($newRole);
+
+        return redirect()->back()->with('message', 'Role ' . $targetUser->username . ' berhasil diubah menjadi ' . $newRole);
     }
 }

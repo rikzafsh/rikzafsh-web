@@ -13,7 +13,7 @@
                 $fotoProfile = "https://ui-avatars.com/api/?name=" . urlencode($namaProfile) . "&size=120&background=random&bold=true"; 
             }
         ?>
-        <img src="<?= $fotoProfile ?>" alt="Foto Profil" style="border-radius: 50%; border: 4px solid #f0f4f8; width: 120px; height: 120px; object-fit: cover; flex-shrink: 0;">
+        <img src="<?= esc($fotoProfile) ?>" alt="Foto Profil" style="border-radius: 50%; border: 4px solid #f0f4f8; width: 120px; height: 120px; object-fit: cover; flex-shrink: 0;">
         
         <div>
             <h1 style="margin: 0 0 5px 0; color: var(--theme-primary, #333); font-size: 2.2em;"><?= esc($user->full_name ?? $user->username) ?></h1>

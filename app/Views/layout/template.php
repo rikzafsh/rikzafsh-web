@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?? 'Rikza F. Sh.' ?></title>
+    <title><?= esc($title ?? 'Rikza F. Sh.') ?></title>
     
     <link rel="stylesheet" href="<?= base_url('css/style.css') ?>">
 </head>
-<body data-theme="<?= $theme ?? 'normal' ?>">
+<body data-theme="<?= esc($theme ?? 'normal') ?>">
 
     <header class="header-wrapper">
         <nav class="navbar">
@@ -29,7 +29,7 @@
                         ?>
                         
                         <a href="<?= base_url('dashboard/profil') ?>" style="text-decoration: none; padding: 0px; display: inline-flex; align-items: center; gap: 10px; color: inherit;">
-                            <img src="<?= $avatarUrl ?>" alt="Avatar" class="avatar" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                            <img src="<?= esc($avatarUrl) ?>" alt="Avatar" class="avatar" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
                             
                             <span class="username" style="line-height: 1; font-weight: 600; color: #fff;">
                                 <?= esc($currentUser->full_name ?? $currentUser->username) ?>

@@ -3,6 +3,7 @@
 namespace App\Database\Seeds;
 
 use CodeIgniter\Database\Seeder;
+use CodeIgniter\CLI\CLI;
 use CodeIgniter\Shield\Entities\User;
 
 class MainSeeder extends Seeder
@@ -14,27 +15,37 @@ class MainSeeder extends Seeder
 
         // ==========================================
         // 1. MEMBUAT BANYAK USER SEKALIGUS
+        // Password diambil dari .env (SEED_PASSWORD_DEVELOPER, SEED_PASSWORD_ADMIN,
+        // SEED_PASSWORD_USER). Jika kosong, dibuat acak dan ditampilkan sekali di terminal.
         // ==========================================
+        $ambilPassword = static function (string $kunci): array {
+            $dariEnv = env('SEED_PASSWORD_' . $kunci);
+
+            return $dariEnv
+                ? [$dariEnv, false]
+                : [bin2hex(random_bytes(8)), true];
+        };
+
         $dataUsers = [
             [
                 'username'  => 'rikzafsh',
                 'full_name' => 'Rikza F. Sh.',
                 'email'     => 'rikzafsh@gmail.com',
-                'password'  => 'rikzafriza22',
+                'password'  => 'DEVELOPER',
                 'group'     => 'developer'
             ],
             [
                 'username'  => 'uwaisandah',
                 'full_name' => 'Uwais Andah Yurmansyah',
                 'email'     => 'uwaisandah@rikzafsh.id',
-                'password'  => 'uwais1435',
+                'password'  => 'ADMIN',
                 'group'     => 'admin'
             ],
             [
                 'username'  => 'armaputra',
                 'full_name' => 'Arma Putra Pratama',
                 'email'     => 'armaputra@rikzafsh.id',
-                'password'  => 'arma1943',
+                'password'  => 'USER',
                 'group'     => 'user'
             ]
         ];
@@ -42,12 +53,18 @@ class MainSeeder extends Seeder
         foreach ($dataUsers as $data) {
             // Cek dulu biar tidak duplikat berdasarkan email
             if ($usersProvider->findByCredentials(['email' => $data['email']]) === null) {
+                [$passwordAwal, $acak] = $ambilPassword($data['password']);
+
                 $user = new User([
                     'username'  => $data['username'],
                     'full_name' => $data['full_name'],
                     'email'     => $data['email'],
-                    'password'  => $data['password'],
+                    'password'  => $passwordAwal,
                 ]);
+
+                if ($acak) {
+                    CLI::write("Password awal untuk {$data['username']}: {$passwordAwal} (segera ganti)", 'yellow');
+                }
                 
                 $usersProvider->save($user);
 

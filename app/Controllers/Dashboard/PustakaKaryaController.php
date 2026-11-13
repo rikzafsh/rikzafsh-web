@@ -14,21 +14,47 @@ class PustakaKaryaController extends BaseController
         $this->pustakaModel = new PustakaKaryaModel();
     }
 
-    public function simpan()
+    private function aturan(): array
     {
-        $fileCover = $this->request->getFile('cover_img');
-        $namaCover = ($fileCover->isValid() && !$fileCover->hasMoved()) ? $fileCover->getRandomName() : null;
-        if ($namaCover) $fileCover->move(FCPATH . 'uploads/covers', $namaCover);
+        return [
+            'codename'      => 'required|max_length[50]',
+            'edisi'         => 'required|is_natural_no_zero',
+            'tema'          => 'required|max_length[200]',
+            'tanggal_rilis' => 'required|valid_date[Y-m-d]',
+            'warna'         => 'required|regex_match[/^#[0-9a-fA-F]{6}$/]',
+            'link'          => 'permit_empty|valid_url_strict[https,http]|max_length[500]',
+            'cover_img'     => 'max_size[cover_img,5120]|is_image[cover_img]|mime_in[cover_img,image/jpg,image/jpeg,image/png,image/webp]',
+        ];
+    }
 
-        $this->pustakaModel->save([
-            'codename'      => $this->request->getPost('codename'),
-            'edisi'         => $this->request->getPost('edisi'),
-            'tema'          => $this->request->getPost('tema'),
+    private function dataForm(?string $cover): array
+    {
+        return [
+            'codename'      => trim((string) $this->request->getPost('codename')),
+            'edisi'         => (int) $this->request->getPost('edisi'),
+            'tema'          => trim((string) $this->request->getPost('tema')),
             'tanggal_rilis' => $this->request->getPost('tanggal_rilis'),
             'warna'         => $this->request->getPost('warna'),
-            'link'          => $this->request->getPost('link'),
-            'cover_img'     => $namaCover
-        ]);
+            'link'          => trim((string) $this->request->getPost('link')),
+            'cover_img'     => $cover,
+        ];
+    }
+
+    public function simpan()
+    {
+        if (! $this->validate($this->aturan())) {
+            return redirect()->back()->withInput()->with('error', implode(' ', $this->validator->getErrors()));
+        }
+
+        $fileCover = $this->request->getFile('cover_img');
+        $namaCover = null;
+
+        if ($fileCover && $fileCover->isValid() && ! $fileCover->hasMoved()) {
+            $namaCover = $fileCover->getRandomName();
+            $fileCover->move(FCPATH . 'uploads/covers', $namaCover);
+        }
+
+        $this->pustakaModel->save($this->dataForm($namaCover));
 
         return redirect()->to('dashboard/projects')->with('message', 'Edisi berhasil ditambahkan!');
     }
@@ -36,26 +62,28 @@ class PustakaKaryaController extends BaseController
     public function update($id)
     {
         $majalahLama = $this->pustakaModel->find($id);
+
+        if (! $majalahLama) {
+            return redirect()->to('dashboard/projects')->with('error', 'Edisi tidak ditemukan.');
+        }
+
+        if (! $this->validate($this->aturan())) {
+            return redirect()->back()->withInput()->with('error', implode(' ', $this->validator->getErrors()));
+        }
+
         $fileCover = $this->request->getFile('cover_img');
         $namaCover = $majalahLama['cover_img'];
 
-        if ($fileCover->isValid() && !$fileCover->hasMoved()) {
+        if ($fileCover && $fileCover->isValid() && ! $fileCover->hasMoved()) {
             $namaCover = $fileCover->getRandomName();
             $fileCover->move(FCPATH . 'uploads/covers', $namaCover);
-            if (!empty($majalahLama['cover_img']) && file_exists(FCPATH . 'uploads/covers/' . $majalahLama['cover_img'])) {
+
+            if (! empty($majalahLama['cover_img']) && is_file(FCPATH . 'uploads/covers/' . $majalahLama['cover_img'])) {
                 unlink(FCPATH . 'uploads/covers/' . $majalahLama['cover_img']);
             }
         }
 
-        $this->pustakaModel->update($id, [
-            'codename'      => $this->request->getPost('codename'),
-            'edisi'         => $this->request->getPost('edisi'),
-            'tema'          => $this->request->getPost('tema'),
-            'tanggal_rilis' => $this->request->getPost('tanggal_rilis'),
-            'warna'         => $this->request->getPost('warna'),
-            'link'          => $this->request->getPost('link'),
-            'cover_img'     => $namaCover
-        ]);
+        $this->pustakaModel->update($id, $this->dataForm($namaCover));
 
         return redirect()->to('dashboard/projects')->with('message', 'Edisi berhasil diperbarui!');
     }
@@ -64,7 +92,7 @@ class PustakaKaryaController extends BaseController
     {
         $majalah = $this->pustakaModel->find($id);
         if ($majalah) {
-            if (!empty($majalah['cover_img']) && file_exists(FCPATH . 'uploads/covers/' . $majalah['cover_img'])) {
+            if (!empty($majalah['cover_img']) && is_file(FCPATH . 'uploads/covers/' . $majalah['cover_img'])) {
                 unlink(FCPATH . 'uploads/covers/' . $majalah['cover_img']);
             }
             $this->pustakaModel->delete($id);

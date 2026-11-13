@@ -24,7 +24,7 @@
                         ? base_url('uploads/avatars/' . $user->avatar) 
                         : 'https://ui-avatars.com/api/?name=' . urlencode($user->username) . '&background=29aafe&color=fff&bold=true&size=110';
                 ?>
-                <img src="<?= $avatarUrl ?>" alt="Avatar" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid #f1f3f9; object-fit: cover;">
+                <img src="<?= esc($avatarUrl) ?>" alt="Avatar" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid #f1f3f9; object-fit: cover;">
             </div>
             <h3 style="margin: 0 0 4px 0; font-size: 1.2rem; color: #1e293b; font-weight: 700;"><?= esc($user->full_name ?? 'User Baru') ?></h3>
             <span style="color: #858796; font-size: 0.85rem; display: block; margin-bottom: 15px;">@<?= esc($user->username) ?></span>

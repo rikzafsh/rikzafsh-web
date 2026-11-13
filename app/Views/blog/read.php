@@ -3,9 +3,9 @@
 <?= $this->section('content') ?>
 <article style="max-width: 800px; margin: auto; background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
     
-    <span style="background: <?= $art['kat_colour'] ?>; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: bold;"><?= $art['nama_kategori'] ?></span>
+    <span style="background: <?= safe_color($art['kat_colour'] ?? null, '#29aafe') ?>; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: bold;"><?= esc($art['nama_kategori']) ?></span>
     
-    <h1 style="margin: 20px 0 10px 0; line-height: 1.2; color: var(--theme-primary);"><?= $art['judul'] ?></h1>
+    <h1 style="margin: 20px 0 10px 0; line-height: 1.2; color: var(--theme-primary);"><?= esc($art['judul']) ?></h1>
     
     <div style="font-size: 0.9em; color: #777; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 12px;">
@@ -13,7 +13,7 @@
                 $fotoPenulis = !empty($art['avatar']) ? base_url('uploads/avatars/' . $art['avatar']) : "https://ui-avatars.com/api/?name=" . urlencode($art['username']) . "&size=45&background=random&bold=true"; 
             ?>
             <a href="/profile/<?= esc($art['username']) ?>">
-                <img src="<?= $fotoPenulis ?>" alt="Foto Penulis" style="border-radius: 50%; border: 2px solid #eee; width: 45px; height: 45px; object-fit: cover; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                <img src="<?= esc($fotoPenulis) ?>" alt="Foto Penulis" style="border-radius: 50%; border: 2px solid #eee; width: 45px; height: 45px; object-fit: cover; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
             </a>
             <div>
                 <span style="display: block;">Oleh <a href="/profile/<?= esc($art['username']) ?>" style="color: #333; text-decoration: none; font-weight: bold;" onmouseover="this.style.color='var(--theme-accent)'" onmouseout="this.style.color='#333'"><?= esc($art['full_name'] ?? $art['username']) ?></a></span>
@@ -37,6 +37,7 @@
         </div>
 
         <form action="/artikel/reaksi" method="post" style="margin: 0;">
+<?= csrf_field() ?>
             <input type="hidden" name="artikel_id" value="<?= $art['id'] ?>">
             <input type="hidden" name="jenis" value="like">
             <button type="submit" style="background: <?= $art['reaksi_user'] === 'like' ? 'var(--theme-accent)' : '#eee' ?>; color: <?= $art['reaksi_user'] === 'like' ? '#fff' : '#333' ?>; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
@@ -46,6 +47,7 @@
         </form>
 
         <form action="/artikel/reaksi" method="post" style="margin: 0;">
+<?= csrf_field() ?>
             <input type="hidden" name="artikel_id" value="<?= $art['id'] ?>">
             <input type="hidden" name="jenis" value="dislike">
             <button type="submit" style="background: <?= $art['reaksi_user'] === 'dislike' ? 'var(--dangerRed)' : '#eee' ?>; color: <?= $art['reaksi_user'] === 'dislike' ? '#fff' : '#333' ?>; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
@@ -55,6 +57,7 @@
         </form>
 
         <form action="/artikel/simpan" method="post" style="margin: 0;">
+<?= csrf_field() ?>
             <input type="hidden" name="artikel_id" value="<?= $art['id'] ?>">
             <button type="submit" style="background: <?= $art['is_saved'] > 0 ? '#ff9800' : '#eee' ?>; color: <?= $art['is_saved'] > 0 ? '#fff' : '#333' ?>; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em; display: flex; align-items: center; gap: 6px;" title="<?= $art['is_saved'] > 0 ? 'Batal Simpan Artikel' : 'Simpan Artikel ini' ?>">
                 <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/></svg>
@@ -68,15 +71,22 @@
     <?php endif; ?>
 
     <div class="konten-artikel" style="line-height: 1.8; color: #333; font-size: 1.1em; margin-bottom: 40px;">
-        <?= $art['konten'] ?>
+        <?= sanitize_html($art['konten']) ?>
     </div>
 
     <hr style="margin: 40px 0; border: 0; border-top: 1px solid #eee;">
 
     <h3>Kolom Diskusi (<?= count($komentar) ?>)</h3>
+    <?php if (session()->getFlashdata('error')): ?>
+        <div style="background: #f8d7da; color: #721c24; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9em;"><?= esc(session()->getFlashdata('error')) ?></div>
+    <?php endif; ?>
+    <?php if (session()->getFlashdata('pesan')): ?>
+        <div style="background: #d4edda; color: #155724; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9em;"><?= esc(session()->getFlashdata('pesan')) ?></div>
+    <?php endif; ?>
     
     <?php if (auth()->loggedIn()): ?>
         <form action="/artikel/komentar" method="post" style="margin-bottom: 40px;">
+<?= csrf_field() ?>
             <input type="hidden" name="artikel_id" value="<?= $art['id'] ?>">
             <textarea name="isi_komentar" placeholder="Tulis opini atau pertanyaanmu disini..." required style="width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 8px; height: 90px; box-sizing: border-box; font-family: inherit;"></textarea>
             <button type="submit" style="margin-top: 10px; padding: 10px 25px; background: var(--theme-button); color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Kirim Komentar</button>
@@ -94,7 +104,7 @@
                     $fotoKomentar = !empty($k['avatar']) ? base_url('uploads/avatars/' . $k['avatar']) : "https://ui-avatars.com/api/?name=" . urlencode($k['username']) . "&size=36&background=random"; 
                 ?>
                 <a href="/profile/<?= esc($k['username']) ?>">
-                    <img src="<?= $fotoKomentar ?>" style="border-radius: 50%; width: 36px; height: 36px; object-fit: cover;" alt="Avatar Pengomentar">
+                    <img src="<?= esc($fotoKomentar) ?>" style="border-radius: 50%; width: 36px; height: 36px; object-fit: cover;" alt="Avatar Pengomentar">
                 </a>
                 <a href="/profile/<?= esc($k['username']) ?>" style="color: var(--theme-primary); font-size: 0.95em; font-weight: bold; text-decoration: none;"><?= esc($k['full_name'] ?? $k['username']) ?></a>
                 <small style="color: #999; font-size: 0.8em;">• <?= date('d M Y H:i', strtotime($k['created_at'])) ?></small>
@@ -104,6 +114,7 @@
             
             <div style="margin-left: 46px; display: flex; align-items: center; gap: 12px;">
                 <form action="/komentar/reaksi" method="post">
+<?= csrf_field() ?>
                     <input type="hidden" name="komentar_id" value="<?= $k['id'] ?>">
                     <input type="hidden" name="jenis" value="like">
                     <button type="submit" style="background: none; border: none; color: <?= $k['reaksi_user'] === 'like' ? 'var(--theme-accent)' : '#777' ?>; cursor: pointer; font-size: 0.85em; font-weight: bold; display: flex; align-items: center; gap: 4px; padding: 0;">
@@ -113,6 +124,7 @@
                 </form>
 
                 <form action="/komentar/reaksi" method="post">
+<?= csrf_field() ?>
                     <input type="hidden" name="komentar_id" value="<?= $k['id'] ?>">
                     <input type="hidden" name="jenis" value="dislike">
                     <button type="submit" style="background: none; border: none; color: <?= $k['reaksi_user'] === 'dislike' ? 'var(--dangerRed)' : '#777' ?>; cursor: pointer; font-size: 0.85em; font-weight: bold; margin-right: 10px; display: flex; align-items: center; gap: 4px; padding: 0;">
@@ -133,7 +145,7 @@
                                     $fotoBalasan = !empty($b['avatar']) ? base_url('uploads/avatars/' . $b['avatar']) : "https://ui-avatars.com/api/?name=" . urlencode($b['username']) . "&size=28&background=random"; 
                                 ?>
                                 <a href="/profile/<?= esc($b['username']) ?>">
-                                    <img src="<?= $fotoBalasan ?>" style="border-radius: 50%; width: 28px; height: 28px; object-fit: cover;" alt="Avatar Pembalas">
+                                    <img src="<?= esc($fotoBalasan) ?>" style="border-radius: 50%; width: 28px; height: 28px; object-fit: cover;" alt="Avatar Pembalas">
                                 </a>
                                 <a href="/profile/<?= esc($b['username']) ?>" style="font-size: 0.85em; color: var(--theme-primary); font-weight: bold; text-decoration: none;"><?= esc($b['full_name'] ?? $b['username']) ?></a>
                                 <small style="color: #999; font-size: 0.75em;">• <?= date('d M Y H:i', strtotime($b['created_at'])) ?></small>
@@ -143,6 +155,7 @@
                             
                             <div style="display: flex; gap: 12px; margin-left: 36px;">
                                 <form action="/komentar/reaksi" method="post">
+<?= csrf_field() ?>
                                     <input type="hidden" name="komentar_id" value="<?= $b['id'] ?>">
                                     <input type="hidden" name="jenis" value="like">
                                     <button type="submit" style="background: none; border: none; color: <?= $b['reaksi_user'] === 'like' ? 'var(--theme-accent)' : '#777' ?>; cursor: pointer; font-size: 0.8em; font-weight: bold; display: flex; align-items: center; gap: 4px; padding: 0;">
@@ -151,6 +164,7 @@
                                     </button>
                                 </form>
                                 <form action="/komentar/reaksi" method="post">
+<?= csrf_field() ?>
                                     <input type="hidden" name="komentar_id" value="<?= $b['id'] ?>">
                                     <input type="hidden" name="jenis" value="dislike">
                                     <button type="submit" style="background: none; border: none; color: <?= $b['reaksi_user'] === 'dislike' ? 'var(--dangerRed)' : '#777' ?>; cursor: pointer; font-size: 0.8em; font-weight: bold; display: flex; align-items: center; gap: 4px; padding: 0;">
@@ -166,6 +180,7 @@
 
             <div id="reply-form-<?= $k['id'] ?>" style="display: none; margin-left: 46px; margin-top: 15px;">
                 <form action="/artikel/komentar" method="post">
+<?= csrf_field() ?>
                     <input type="hidden" name="artikel_id" value="<?= $art['id'] ?>">
                     <input type="hidden" name="parent_id" value="<?= $k['id'] ?>">
                     <textarea name="isi_komentar" placeholder="Tulis balasanmu..." required style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; font-family: inherit; font-size: 0.9em; height: 60px; box-sizing: border-box;"></textarea>

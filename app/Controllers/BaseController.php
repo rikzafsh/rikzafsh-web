@@ -28,6 +28,14 @@ abstract class BaseController extends Controller
     // protected $session;
 
     /**
+     * Helper yang dimuat otomatis di semua controller turunan.
+     * 'security' berisi sanitize_html(), safe_color(), dan safe_url().
+     *
+     * @var list<string>
+     */
+    protected $helpers = ['security'];
+
+    /**
      * @return void
      */
     public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)

@@ -37,7 +37,7 @@
                                 : 'https://ui-avatars.com/api/?name=' . urlencode($u->username) . '&background=random&color=fff';
                                 ?>
                             <a href="/profile/<?= esc($u->username) ?>">
-                                <img src="<?= $avatar ?>" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #eee;">
+                                <img src="<?= esc($avatar) ?>" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #eee;">
                             </a>
                             <div>
                                 <a href="/profile/<?= esc($u->username) ?>" style="text-decoration: none;">
