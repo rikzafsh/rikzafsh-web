@@ -30,10 +30,11 @@ abstract class BaseController extends Controller
     /**
      * Helper yang dimuat otomatis di semua controller turunan.
      * 'security' berisi sanitize_html(), safe_color(), dan safe_url().
+     * 'blog' berisi tgl_indo(), waktu_baca(), ringkasan(), avatar_html(), dll.
      *
      * @var list<string>
      */
-    protected $helpers = ['security'];
+    protected $helpers = ['security', 'blog'];
 
     /**
      * @return void

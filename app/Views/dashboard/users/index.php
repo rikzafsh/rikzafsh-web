@@ -8,12 +8,6 @@
         <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem;">Panel kendali Developer untuk mengatur hak akses seluruh pengguna.</p>
     </div>
 
-    <?php if (session()->getFlashdata('message')) : ?>
-        <div style="padding: 15px; background: #d1e7dd; color: #0f5132; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; border-left: 5px solid #198754;">
-            <?= session()->getFlashdata('message') ?>
-        </div>
-    <?php endif; ?>
-
     <div style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
             <thead>

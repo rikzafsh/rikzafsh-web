@@ -7,12 +7,6 @@
         <h2 style="margin: 0; color: #2d3748; font-size: 1.5rem; font-weight: 700;">Kelola Proyek</h2>
     </div>
 
-    <?php if (session()->getFlashdata('message')) : ?>
-        <div style="background: #d4edda; color: #155724; padding: 12px 20px; border-radius: 6px; margin-bottom: 20px; font-weight: 600;">
-            <?= session()->getFlashdata('message'); ?>
-        </div>
-    <?php endif; ?>
-
     <div style="display: flex; gap: 20px; border-bottom: 2px solid #edf2f7; margin-bottom: 25px; padding-bottom: 10px;">
         <button id="btn-tab-pustaka" onclick="switchTab('tab-pustaka', this)" class="tab-btn" style="background: none; border: none; font-size: 1rem; font-weight: 700; color: #4e73df; border-bottom: 3px solid #4e73df; padding-bottom: 8px; cursor: pointer;">Pustaka Karya</button>
         <button id="btn-tab-web" onclick="switchTab('tab-web', this)" class="tab-btn" style="background: none; border: none; font-size: 1rem; font-weight: 600; color: #718096; padding-bottom: 8px; cursor: not-allowed;">Web Apps (Soon)</button>

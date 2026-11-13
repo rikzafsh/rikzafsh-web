@@ -10,72 +10,93 @@ use App\Models\KomentarReaksiModel;
 
 class Blog extends BaseController
 {
+    private const PER_HALAMAN = 9;
+
+    /**
+     * Daftar artikel dengan pencarian, filter kategori/penulis, pengurutan, dan pagination.
+     */
     public function index()
     {
-        $artikelModel = new ArtikelModel();
+        $artikelModel  = new ArtikelModel();
         $kategoriModel = new KategoriModel();
 
-        // Ambil input dari URL query string
-        $keyword  = $this->request->getGet('cari');
-        $kategori = $this->request->getGet('kategori'); // Sekarang menerima SLUG kategori
-        $penulis  = $this->request->getGet('penulis');  // Sekarang menerima USERNAME penulis
-        $sort     = $this->request->getGet('sort') ?? 'terbaru';
+        $keyword  = trim((string) $this->request->getGet('cari'));
+        $kategori = trim((string) $this->request->getGet('kategori'));
+        $penulis  = trim((string) $this->request->getGet('penulis'));
+        $sort     = (string) $this->request->getGet('sort');
 
-        // PERBAIKAN: Menambahkan kategori.cover_image pada select dan mengubah join menjadi 'left'
-        $query = $artikelModel->select('artikel.*, users.username, users.full_name, kategori.nama_kategori, kategori.slug as kat_slug, kategori.colour as kat_colour, kategori.cover_image')
-                              ->join('users', 'users.id = artikel.penulis_id', 'left')
-                              ->join('kategori', 'kategori.id = artikel.kategori_id', 'left');
-
-        // 1. FITUR PENCARIAN
-        if (!empty($keyword)) {
-            $query->groupStart()
-                  ->like('artikel.judul', $keyword)
-                  ->orLike('artikel.konten', $keyword)
-                  ->groupEnd();
+        if (! in_array($sort, ['terbaru', 'terlama', 'populer'], true)) {
+            $sort = 'terbaru';
         }
 
-        // 2. FITUR FILTER KATEGORI (Berdasarkan Slug Kategori)
-        if (!empty($kategori)) {
-            $query->where('kategori.slug', $kategori);
+        $artikelModel->kartu()->hanyaTerbit();
+
+        if ($keyword !== '') {
+            $artikelModel->groupStart()
+                ->like('artikel.judul', $keyword)
+                ->orLike('artikel.konten', $keyword)
+                ->groupEnd();
         }
 
-        // 3. FITUR FILTER PENULIS (Berdasarkan Username, Lebih Aman!)
-        if (!empty($penulis)) {
-            $query->where('users.username', $penulis);
+        if ($kategori !== '') {
+            $artikelModel->where('kategori.slug', $kategori);
         }
 
-        // 4. FITUR SORTING
+        if ($penulis !== '') {
+            $artikelModel->where('users.username', $penulis);
+        }
+
         if ($sort === 'terlama') {
-            $query->orderBy('artikel.created_at', 'ASC');
+            $artikelModel->orderBy('artikel.created_at', 'ASC');
+        } elseif ($sort === 'populer') {
+            $artikelModel->orderBy('artikel.views', 'DESC')->orderBy('artikel.created_at', 'DESC');
         } else {
-            $query->orderBy('artikel.created_at', 'DESC');
+            $artikelModel->orderBy('artikel.created_at', 'DESC');
         }
 
-        // Ambil semua daftar kategori untuk isi dropdown filter di view
-        $semuaKategori = $kategoriModel->findAll();
+        $daftarArtikel = $artikelModel->paginate(self::PER_HALAMAN);
+        $pager         = $artikelModel->pager;
 
-        // Cari tahu info nama penulis yang sedang difilter (jika ada) untuk teks indikator
+        // Kategori beserta jumlah artikel terbitnya (untuk chip filter)
+        $syaratStatus  = ArtikelModel::adaKolomStatus() ? " AND artikel.status = 'published'" : '';
+        $semuaKategori = $kategoriModel->select(
+            'kategori.*, (SELECT COUNT(*) FROM artikel WHERE artikel.kategori_id = kategori.id' . $syaratStatus . ') as total_artikel',
+            false
+        )->orderBy('nama_kategori', 'ASC')->findAll();
+
         $namaPenulisAktif = '';
-        if (!empty($penulis)) {
-            $db = \Config\Database::connect();
-            $user = $db->table('users')->where('username', $penulis)->get()->getRow();
-            $namaPenulisAktif = $user ? ($user->full_name ?? $user->username) : '';
+        if ($penulis !== '') {
+            $user = \Config\Database::connect()->table('users')->where('username', $penulis)->get()->getRow();
+            $namaPenulisAktif = $user ? nama_tampil($user->full_name ?? '', $user->username) : '';
         }
 
-        $data = [
-            'title'              => 'Daftar Artikel | Ruang Rikza',
-            'daftar_artikel'     => $query->findAll(),
+        $namaKategoriAktif = '';
+        foreach ($semuaKategori as $k) {
+            if ($k['slug'] === $kategori) {
+                $namaKategoriAktif = $k['nama_kategori'];
+            }
+        }
+
+        return view('blog/index', [
+            'title'              => 'Artikel | Ruang Rikza',
+            'fullWidthPage'      => true,
+            'daftar_artikel'     => $daftarArtikel,
+            'pager'              => $pager,
+            'total_hasil'        => $pager->getTotal(),
+            'halaman_aktif'      => $pager->getCurrentPage(),
             'semua_kategori'     => $semuaKategori,
             'keyword'            => $keyword,
             'kategori_aktif'     => $kategori,
+            'nama_kategori_aktif' => $namaKategoriAktif,
             'penulis_aktif'      => $penulis,
             'nama_penulis_aktif' => $namaPenulisAktif,
-            'sort_aktif'         => $sort
-        ];
-
-        return view('blog/index', $data);
+            'sort_aktif'         => $sort,
+        ]);
     }
 
+    /**
+     * Halaman baca artikel: konten, reaksi, komentar, dan artikel terkait.
+     */
     public function read($slug)
     {
         $artikelModel  = new ArtikelModel();
@@ -88,14 +109,26 @@ class Blog extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         }
 
-        // Tambah views hanya sekali per sesi untuk setiap artikel
+        // Draf hanya boleh dilihat penulisnya dan admin/developer
+        $terbit = ! ArtikelModel::adaKolomStatus() || ($cekArtikel['status'] ?? 'published') === 'published';
+        if (! $terbit) {
+            $boleh = auth()->loggedIn()
+                && (auth()->user()->inGroup('admin', 'developer') || (int) $cekArtikel['penulis_id'] === (int) auth()->id());
+
+            if (! $boleh) {
+                throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+            }
+        }
+
+        // Tambah views hanya sekali per sesi (dan hanya untuk artikel terbit)
         $kunciView = 'viewed_artikel_' . $cekArtikel['id'];
-        if (! session()->get($kunciView)) {
+        if ($terbit && ! session()->get($kunciView)) {
             $artikelModel->where('id', $cekArtikel['id'])->set('views', 'views + 1', false)->update();
             session()->set($kunciView, true);
         }
 
-        $artikel = $artikelModel->select('artikel.*, users.username, users.full_name, users.avatar, kategori.nama_kategori, kategori.colour as kat_colour, kategori.cover_image,
+        $artikel = $artikelModel->select('artikel.*, users.username, users.full_name, users.avatar, users.bio,
+            kategori.nama_kategori, kategori.slug as kat_slug, kategori.colour as kat_colour, kategori.cover_image,
             (SELECT COUNT(*) FROM artikel_reaksi WHERE artikel_id = artikel.id AND jenis = \'like\') as total_like,
             (SELECT COUNT(*) FROM artikel_reaksi WHERE artikel_id = artikel.id AND jenis = \'dislike\') as total_dislike,
             (SELECT jenis FROM artikel_reaksi WHERE artikel_id = artikel.id AND user_id = ' . $currentUserId . ') as reaksi_user,
@@ -118,14 +151,48 @@ class Blog extends BaseController
             }
         }
 
-        $data = [
-            'title'    => $artikel['judul'] . ' | Ruang Rikza',
-            'art'      => $artikel,
-            'komentar' => $komentarUtama,
-            'balasan'  => $balasan,
-        ];
+        return view('blog/read', [
+            'title'          => $artikel['judul'] . ' | Ruang Rikza',
+            'art'            => $artikel,
+            'komentar'       => $komentarUtama,
+            'balasan'        => $balasan,
+            'total_komentar' => count($semuaKomentar),
+            'terkait'        => $this->artikelTerkait($artikel),
+            'terbit'         => $terbit,
+            'metaDescription' => ringkasan($artikel['konten'], 155),
+            'ogImage'         => ! empty($artikel['thumbnail']) ? base_url('uploads/artikel/' . $artikel['thumbnail']) : null,
+            'ogType'          => 'article',
+        ]);
+    }
 
-        return view('blog/read', $data);
+    /**
+     * Sampai 3 artikel terkait: utamakan kategori yang sama, sisanya diisi artikel terbaru.
+     */
+    private function artikelTerkait(array $artikel): array
+    {
+        $hasil = [];
+
+        if (! empty($artikel['kategori_id'])) {
+            $model = new ArtikelModel();
+            $model->kartu()->hanyaTerbit();
+            $hasil = $model->where('artikel.id !=', $artikel['id'])
+                ->where('artikel.kategori_id', $artikel['kategori_id'])
+                ->orderBy('artikel.created_at', 'DESC')
+                ->findAll(3);
+        }
+
+        if (count($hasil) < 3) {
+            $sudah   = array_merge([(int) $artikel['id']], array_map('intval', array_column($hasil, 'id')));
+            $model   = new ArtikelModel();
+            $model->kartu()->hanyaTerbit();
+            $tambahan = $model->whereNotIn('artikel.id', $sudah)
+                ->orderBy('artikel.created_at', 'DESC')
+                ->findAll(3 - count($hasil));
+
+            $hasil = array_merge($hasil, $tambahan);
+        }
+
+        return $hasil;
     }
 
     /**
@@ -142,11 +209,26 @@ class Blog extends BaseController
         return $id;
     }
 
-    // 3. FUNGSI LOGIKA TOGGLE SIMPAN ARTIKEL (BOOKMARK)
+    /**
+     * Alamat halaman artikel (opsional dengan jangkar), dipakai agar pengguna
+     * kembali ke bagian halaman yang sedang ia gunakan setelah aksi.
+     */
+    private function urlArtikel(int $artikelId, string $jangkar = ''): string
+    {
+        $artikel = (new ArtikelModel())->find($artikelId);
+
+        if (! $artikel) {
+            return site_url('artikel');
+        }
+
+        return site_url('artikel/' . $artikel['slug']) . ($jangkar !== '' ? '#' . $jangkar : '');
+    }
+
+    // FUNGSI LOGIKA TOGGLE SIMPAN ARTIKEL (BOOKMARK)
     public function simpanArtikel()
     {
         if (! auth()->loggedIn()) {
-            return redirect()->back()->with('error', 'Login dulu yuk!');
+            return redirect()->back()->with('error', 'Masuk dulu untuk menyimpan artikel.');
         }
 
         $artikelId = $this->artikelValid($this->request->getPost('artikel_id'));
@@ -157,25 +239,26 @@ class Blog extends BaseController
         $simpanModel = new \App\Models\ArtikelSimpanModel();
         $userId      = auth()->id();
 
-        // Cek jika sudah pernah disimpan, maka hapus (unsave). Jika belum, maka simpan.
         $cek = $simpanModel->where('artikel_id', $artikelId)->where('user_id', $userId)->first();
 
         if ($cek) {
             $simpanModel->delete($cek['id']);
+            $pesan = 'Artikel dihapus dari simpanan.';
         } else {
             $simpanModel->save([
                 'artikel_id' => $artikelId,
                 'user_id'    => $userId,
             ]);
+            $pesan = 'Artikel disimpan.';
         }
 
-        return redirect()->back();
+        return redirect()->to($this->urlArtikel($artikelId, 'reaksi'))->with('message', $pesan);
     }
 
     public function reaksiArtikel()
     {
         if (! auth()->loggedIn()) {
-            return redirect()->back()->with('error', 'Login dulu yuk!');
+            return redirect()->back()->with('error', 'Masuk dulu untuk memberi reaksi.');
         }
 
         $artikelId = $this->artikelValid($this->request->getPost('artikel_id'));
@@ -192,10 +275,8 @@ class Blog extends BaseController
 
         if ($cek) {
             if ($cek['jenis'] === $jenis) {
-                // Klik tombol yang sama: batalkan reaksi
                 $reaksiModel->delete($cek['id']);
             } else {
-                // Klik tombol berbeda: ganti jenis reaksinya
                 $reaksiModel->update($cek['id'], ['jenis' => $jenis]);
             }
         } else {
@@ -206,20 +287,20 @@ class Blog extends BaseController
             ]);
         }
 
-        return redirect()->back();
+        return redirect()->to($this->urlArtikel($artikelId, 'reaksi'));
     }
 
     public function reaksiKomentar()
     {
         if (! auth()->loggedIn()) {
-            return redirect()->back()->with('error', 'Login dulu yuk!');
+            return redirect()->back()->with('error', 'Masuk dulu untuk memberi reaksi.');
         }
 
         $komentarId = (int) $this->request->getPost('komentar_id');
         $jenis      = $this->request->getPost('jenis');
+        $komentar   = $komentarId > 0 ? (new KomentarModel())->find($komentarId) : null;
 
-        if ($komentarId <= 0 || ! in_array($jenis, ['like', 'dislike'], true)
-            || (new KomentarModel())->find($komentarId) === null) {
+        if ($komentar === null || ! in_array($jenis, ['like', 'dislike'], true)) {
             return redirect()->back()->with('error', 'Permintaan tidak valid.');
         }
 
@@ -242,13 +323,13 @@ class Blog extends BaseController
             ]);
         }
 
-        return redirect()->back();
+        return redirect()->to($this->urlArtikel((int) $komentar['artikel_id'], 'komentar-' . $komentarId));
     }
 
     public function submitKomentar()
     {
         if (! auth()->loggedIn()) {
-            return redirect()->back()->with('error', 'Login dulu ya!');
+            return redirect()->back()->with('error', 'Masuk dulu untuk berkomentar.');
         }
 
         $rules = [
@@ -291,6 +372,36 @@ class Blog extends BaseController
             'isi_komentar' => trim((string) $this->request->getPost('isi_komentar')),
         ]);
 
-        return redirect()->back()->with('pesan', 'Komentar terkirim!');
+        return redirect()->to($this->urlArtikel($artikelId, 'komentar-' . $komentarModel->getInsertID()))
+            ->with('message', 'Komentar terkirim.');
+    }
+
+    /**
+     * Hapus komentar (beserta balasannya). Hanya pemilik komentar atau admin/developer.
+     */
+    public function hapusKomentar($id)
+    {
+        if (! auth()->loggedIn()) {
+            return redirect()->back()->with('error', 'Masuk dulu.');
+        }
+
+        $komentarModel = new KomentarModel();
+        $komentar      = $komentarModel->find((int) $id);
+
+        if (! $komentar) {
+            return redirect()->back()->with('error', 'Komentar tidak ditemukan.');
+        }
+
+        $user = auth()->user();
+        if (! ($user->inGroup('admin', 'developer') || (int) $komentar['user_id'] === (int) $user->id)) {
+            return redirect()->back()->with('error', 'Anda tidak berhak menghapus komentar ini.');
+        }
+
+        // Hapus balasan dulu (tabel komentar tidak punya foreign key untuk parent_id)
+        $komentarModel->where('parent_id', $komentar['id'])->delete();
+        $komentarModel->delete($komentar['id']);
+
+        return redirect()->to($this->urlArtikel((int) $komentar['artikel_id'], 'diskusi'))
+            ->with('message', 'Komentar dihapus.');
     }
 }

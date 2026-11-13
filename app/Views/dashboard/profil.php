@@ -8,12 +8,6 @@
         <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.88rem;">Kelola informasi profil, foto avatar, dan bio Anda.</p>
     </div>
     
-    <?php if (session()->getFlashdata('message')) : ?>
-        <div style="padding: 12px; background: #d1e7dd; color: #0f5132; border-radius: 6px; margin-bottom: 20px; font-size: 0.9rem;">
-            <?= session()->getFlashdata('message') ?>
-        </div>
-    <?php endif; ?>
-
     <div style="display: grid; grid-template-columns: 350px 1fr; gap: 30px; align-items: start;">
         
         <div style="background: #ffffff; padding: 35px 20px; border: 1px solid #e3e6f0; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">

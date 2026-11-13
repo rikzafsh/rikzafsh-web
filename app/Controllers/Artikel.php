@@ -165,6 +165,7 @@ class Artikel extends BaseController
             'judul'       => 'required|min_length[5]|max_length[200]',
             'kategori_id' => 'required|is_natural_no_zero|is_not_unique[kategori.id]',
             'konten'      => 'required',
+            'status'      => 'permit_empty|in_list[draft,published]',
             'thumbnail'   => 'max_size[thumbnail,2048]|is_image[thumbnail]|mime_in[thumbnail,image/jpg,image/jpeg,image/png]',
         ];
 
@@ -182,16 +183,27 @@ class Artikel extends BaseController
 
         $judul = trim((string) $this->request->getPost('judul'));
 
-        $this->artikelModel->save([
+        $data = [
             'judul'       => $judul,
             'slug'        => $this->buatSlugUnik($judul),
             'kategori_id' => (int) $this->request->getPost('kategori_id'),
             'konten'      => sanitize_html($this->request->getPost('konten')),
             'thumbnail'   => $namaThumbnail,
             'penulis_id'  => auth()->id(),
-        ]);
+        ];
 
-        return redirect()->to('/dashboard/artikel')->with('message', 'Artikel berhasil dipublikasikan!');
+        $status = $this->request->getPost('status') === 'draft' ? 'draft' : 'published';
+        if (ArtikelModel::adaKolomStatus()) {
+            $data['status'] = $status;
+        }
+
+        $this->artikelModel->save($data);
+
+        $pesan = ($status === 'draft' && ArtikelModel::adaKolomStatus())
+            ? 'Artikel disimpan sebagai draf. Belum tampil untuk pengunjung.'
+            : 'Artikel berhasil dipublikasikan!';
+
+        return redirect()->to('/dashboard/artikel')->with('message', $pesan);
     }
 
     /**
@@ -237,6 +249,7 @@ class Artikel extends BaseController
             'judul'       => 'required|min_length[5]|max_length[200]',
             'kategori_id' => 'required|is_natural_no_zero|is_not_unique[kategori.id]',
             'konten'      => 'required',
+            'status'      => 'permit_empty|in_list[draft,published]',
             'thumbnail'   => 'max_size[thumbnail,2048]|is_image[thumbnail]|mime_in[thumbnail,image/jpg,image/jpeg,image/png]',
         ];
 
@@ -262,15 +275,49 @@ class Artikel extends BaseController
             ? $artikelLama['slug']
             : $this->buatSlugUnik($judul, (int) $id);
 
-        $this->artikelModel->update($id, [
+        $data = [
             'judul'       => $judul,
             'slug'        => $slug,
             'kategori_id' => (int) $this->request->getPost('kategori_id'),
             'konten'      => sanitize_html($this->request->getPost('konten')),
             'thumbnail'   => $namaThumbnail,
-        ]);
+        ];
+
+        if (ArtikelModel::adaKolomStatus() && in_array($this->request->getPost('status'), ['draft', 'published'], true)) {
+            $data['status'] = $this->request->getPost('status');
+        }
+
+        $this->artikelModel->update($id, $data);
 
         return redirect()->to('/dashboard/artikel')->with('message', 'Perubahan artikel berhasil disimpan!');
+    }
+
+    /**
+     * Beralih antara draf dan terbit (hanya lewat POST)
+     */
+    public function ubahStatus($id)
+    {
+        $artikel = $this->artikelModel->find($id);
+
+        if (! $artikel) {
+            return redirect()->to('/dashboard/artikel')->with('error', 'Artikel tidak ditemukan.');
+        }
+
+        if (! $this->bolehKelola($artikel)) {
+            return redirect()->to('/dashboard/artikel')->with('error', 'Anda tidak memiliki akses untuk mengubah artikel ini.');
+        }
+
+        if (! ArtikelModel::adaKolomStatus()) {
+            return redirect()->to('/dashboard/artikel')->with('error', 'Fitur draf belum aktif. Jalankan "php spark migrate" terlebih dahulu.');
+        }
+
+        $baru = ($artikel['status'] ?? 'published') === 'published' ? 'draft' : 'published';
+        $this->artikelModel->update($id, ['status' => $baru]);
+
+        return redirect()->to('/dashboard/artikel')->with(
+            'message',
+            $baru === 'published' ? 'Artikel dipublikasikan.' : 'Artikel dikembalikan menjadi draf.'
+        );
     }
 
     /**

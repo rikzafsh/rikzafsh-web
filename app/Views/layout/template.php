@@ -1,112 +1,139 @@
+<?php
+helper(['security', 'blog']); // pastikan fungsi tampilan tersedia di semua halaman
+$user        = auth()->loggedIn() ? auth()->user() : null;
+$isStaff     = $user && $user->inGroup('admin', 'developer');
+$namaUser    = $user ? nama_tampil($user->full_name ?? '', $user->username) : '';
+$isDashboard = url_is('dashboard*');
+
+$navKategori = [];
+try {
+    $navKategori = model(\App\Models\KategoriModel::class)->orderBy('nama_kategori', 'ASC')->findAll(6);
+} catch (\Throwable $e) {
+    $navKategori = [];
+}
+
+$aktif = static fn (string $pola): string => url_is($pola) ? ' is-active' : '';
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= esc($title ?? 'Rikza F. Sh.') ?></title>
-    
+    <meta name="description" content="<?= esc($metaDescription ?? 'Ruang Rikza — tempat tulisan, proyek, dan catatan Rikza F. Sh.', 'attr') ?>">
+    <meta name="theme-color" content="#703996">
+    <?php if (! empty($ogImage)): ?>
+        <meta property="og:image" content="<?= esc($ogImage, 'attr') ?>">
+    <?php endif ?>
+    <meta property="og:title" content="<?= esc($title ?? 'Rikza F. Sh.', 'attr') ?>">
+    <meta property="og:type" content="<?= esc($ogType ?? 'website', 'attr') ?>">
     <link rel="stylesheet" href="<?= base_url('css/style.css') ?>">
 </head>
 <body data-theme="<?= esc($theme ?? 'normal') ?>">
+    <a class="skip-link" href="#main">Lewati ke konten</a>
+    <div class="read-progress" id="readProgress" aria-hidden="true"></div>
 
-    <header class="header-wrapper">
-        <nav class="navbar">
-            <div class="logo">
-                <a href="/">Rikza F. Sh.</a>
-            </div>
-            
-            <div class="navbar-right">
-                <div class="profile-box">
-                    <?php if (auth()->loggedIn()): ?>
-                        <?php 
-                            // Ambil data user langsung dari Shield agar bisa diakses di semua halaman tanpa lemparan controller
-                            $currentUser = auth()->user(); 
+    <header class="site-header">
+        <div class="container">
+            <nav class="nav" aria-label="Navigasi utama">
+                <a class="nav__brand" href="<?= base_url('/') ?>">
+                    <span class="nav__logo" aria-hidden="true">R</span>
+                    <span>Rikza F. Sh.</span>
+                </a>
 
-                            // Cek apakah user punya file foto profil di database & filenya fisik ada di server
-                            $avatarUrl = (!empty($currentUser->avatar) && file_exists(FCPATH . 'uploads/avatars/' . $currentUser->avatar)) 
-                                ? base_url('uploads/avatars/' . $currentUser->avatar) 
-                                : 'https://ui-avatars.com/api/?name=' . urlencode($currentUser->username) . '&background=29aafe&color=fff&bold=true';
-                        ?>
-                        
-                        <a href="<?= base_url('dashboard/profil') ?>" style="text-decoration: none; padding: 0px; display: inline-flex; align-items: center; gap: 10px; color: inherit;">
-                            <img src="<?= esc($avatarUrl) ?>" alt="Avatar" class="avatar" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
-                            
-                            <span class="username" style="line-height: 1; font-weight: 600; color: #fff;">
-                                <?= esc($currentUser->full_name ?? $currentUser->username) ?>
-                            </span>
-                        </a>
-                    <?php else: ?>
-                        <img src="https://ui-avatars.com/api/?name=Guest&background=cccccc&color=666" alt="Avatar" class="avatar" style="width: 35px; height: 35px; border-radius: 50%;">
-                        <a href="<?= base_url('login') ?>" class="login-link">Masuk</a>
-                    <?php endif; ?>
+                <div class="nav__links" id="navLinks">
+                    <a class="nav__link<?= $aktif('/') ?>" href="<?= base_url('/') ?>">Beranda</a>
+                    <a class="nav__link<?= $aktif('artikel*') ?>" href="<?= base_url('artikel') ?>">Artikel</a>
+                    <a class="nav__link<?= $aktif('projects*') ?>" href="<?= base_url('projects') ?>">Proyek</a>
+
+                    <form class="nav__search nav__search-mobile" action="<?= base_url('artikel') ?>" method="get" role="search">
+                        <input type="search" name="cari" placeholder="Cari artikel…" aria-label="Cari artikel">
+                        <button type="submit" aria-label="Cari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+                    </form>
                 </div>
-                
-                <button class="menu-btn" id="menuToggle">☰</button>
-            </div>
-        </nav>
 
-        <div class="sub-navbar">
-            <div class="menu-kiri">
-                <a href="/">HOME</a>
-                <a href="/artikel">ARTICLES</a>
-                <a href="/projects">PROJECTS</a>
-                <a href="/utilities">UTILITIES</a>
-            </div>
-            <div class="tanggal-kanan">
-                <?php
-                    $namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                    echo date('d') . ' ' . $namaBulan[date('n')] . ' ' . date('Y');
-                ?>
-            </div>
+                <div class="nav__spacer"></div>
+
+                <div class="nav__actions">
+                    <form class="nav__search" action="<?= base_url('artikel') ?>" method="get" role="search">
+                        <input type="search" name="cari" placeholder="Cari artikel…" aria-label="Cari artikel" value="<?= esc(service('request')->getGet('cari') ?? '') ?>">
+                        <button type="submit" aria-label="Cari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+                    </form>
+
+                    <?php if ($user): ?>
+                        <details class="user-menu">
+                            <summary aria-label="Menu akun">
+                                <?= avatar_html($user->avatar ?? null, $namaUser, 'sm') ?>
+                                <span class="user-menu__name"><?= esc($namaUser) ?></span>
+                            </summary>
+                            <div class="user-menu__panel">
+                                <div class="user-menu__head">
+                                    <strong><?= esc($namaUser) ?></strong>
+                                    <span><?= esc($user->email ?? '') ?></span>
+                                </div>
+                                <a class="user-menu__item" href="<?= base_url('dashboard') ?>">Dasbor</a>
+                                <a class="user-menu__item" href="<?= base_url('dashboard/artikel/tambah') ?>">Tulis artikel baru</a>
+                                <a class="user-menu__item" href="<?= base_url('dashboard/artikel') ?>">Kelola artikel</a>
+                                <a class="user-menu__item" href="<?= base_url('dashboard/profil') ?>">Profil saya</a>
+                                <a class="user-menu__item" href="<?= base_url('profile/' . rawurlencode($user->username)) ?>">Lihat profil publik</a>
+                                <a class="user-menu__item user-menu__item--danger" href="<?= base_url('logout') ?>">Keluar</a>
+                            </div>
+                        </details>
+                    <?php else: ?>
+                        <a class="btn btn--light btn--sm" href="<?= base_url('login') ?>">Masuk</a>
+                    <?php endif ?>
+
+                    <button class="nav__toggle" id="navToggle" type="button" aria-label="Buka menu" aria-expanded="false" aria-controls="navLinks">☰</button>
+                </div>
+            </nav>
         </div>
     </header>
 
-    <div class="overlay" id="overlay"></div>
-
-    <aside class="sidebar" id="sidebar">
-        <button class="close-btn" id="closeSidebar">&times;</button>
-        
-        <h3 style="margin-top: 10px;">Menu Utama</h3>
-        <a href="/">Beranda</a>
-        
-        <?php if (auth()->loggedIn()): ?>
-            <a href="/dashboard">Dasbor Anggota</a>
-            <a href="/dashboard/artikel/tambah">Tulis Artikel Baru</a>
-        <?php endif; ?>
-
-        <h3>Kategori Tulisan</h3>
-        <a href="#"># Teknologi</a>
-        <a href="#"># Tutorial</a>
-        <a href="#"># Jurnal Pribadi</a>
-
-        <?php if (auth()->loggedIn()): ?>
-            <h3 style="margin-top: 40px;">Akun</h3>
-            <a href="/logout" style="color: #d9534f; font-weight: bold;">Keluar (Logout)</a>
-        <?php endif; ?>
-    </aside>
-
-    <div style="<?= url_is('dashboard*') ? 'width: 100%; margin: 0; padding: 0;' : 'max-width: 1200px; margin: 0 auto; padding: 20px;' ?>">
-        <?= $this->renderSection('content') ?>
-    </div>
+    <main id="main" class="main<?= $isDashboard ? ' main--full' : '' ?><?= ! empty($fullWidthPage) ? ' main--full' : '' ?>">
+        <?php if ($isDashboard): ?>
+            <?= $this->renderSection('content') ?>
+        <?php elseif (! empty($fullWidthPage)): ?>
+            <div class="container flash-wrap"><?= $this->include('layout/flash') ?></div>
+            <?= $this->renderSection('content') ?>
+        <?php else: ?>
+            <div class="container">
+                <?= $this->include('layout/flash') ?>
+                <?= $this->renderSection('content') ?>
+            </div>
+        <?php endif ?>
+    </main>
 
     <footer class="footer">
-        &copy; <?= date('Y') ?> Rikza F. Sh.
+        <div class="footer__grid">
+            <div>
+                <a class="footer__brand" href="<?= base_url('/') ?>"><span class="nav__logo" aria-hidden="true">R</span> Ruang Rikza</a>
+                <p>Tempat menulis, berbagi proyek, dan mencatat hal-hal yang sedang dipelajari.</p>
+            </div>
+            <div>
+                <h4>Jelajah</h4>
+                <a href="<?= base_url('artikel') ?>">Semua artikel</a>
+                <a href="<?= base_url('artikel?sort=populer') ?>">Artikel populer</a>
+                <a href="<?= base_url('projects') ?>">Proyek</a>
+                <?php if ($user): ?>
+                    <a href="<?= base_url('dashboard/artikel/tambah') ?>">Tulis artikel</a>
+                <?php else: ?>
+                    <a href="<?= base_url('login') ?>">Masuk</a>
+                <?php endif ?>
+            </div>
+            <div>
+                <h4>Kategori</h4>
+                <?php if (! empty($navKategori)): ?>
+                    <?php foreach ($navKategori as $nk): ?>
+                        <a href="<?= base_url('artikel?kategori=' . rawurlencode($nk['slug'])) ?>"><?= esc($nk['nama_kategori']) ?></a>
+                    <?php endforeach ?>
+                <?php else: ?>
+                    <p>Belum ada kategori.</p>
+                <?php endif ?>
+            </div>
+        </div>
+        <div class="footer__bottom">&copy; <?= date('Y') ?> Rikza F. Sh. Semua hak dilindungi.</div>
     </footer>
 
-    <script>
-        const menuToggle = document.getElementById('menuToggle');
-        const closeSidebar = document.getElementById('closeSidebar');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-
-        function toggleSidebar() {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
-
-        menuToggle.addEventListener('click', toggleSidebar);
-        closeSidebar.addEventListener('click', toggleSidebar);
-        overlay.addEventListener('click', toggleSidebar);
-    </script>
+    <script src="<?= base_url('js/app.js') ?>" defer></script>
 </body>
 </html>

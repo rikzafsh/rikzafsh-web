@@ -8,22 +8,35 @@ class Dashboard extends BaseController
 {
     public function index()
     {
-        $artikelModel = new ArtikelModel();
         $userId = auth()->id();
 
-        // Hitung total artikel dan akumulasi view khusus milik user yang sedang login
-        $totalArtikel = $artikelModel->where('penulis_id', $userId)->countAllResults();
-        
-        $queryViews = $artikelModel->selectSum('views')->where('penulis_id', $userId)->first();
-        $totalViews = $queryViews['views'] ?? 0;
+        $totalArtikel = (new ArtikelModel())->where('penulis_id', $userId)->countAllResults();
 
-        $data = [
-            'title'         => 'Dashboard | Ruang Rikza',
-            'total_artikel' => $totalArtikel,
-            'total_views'   => $totalViews
-        ];
+        $queryViews = (new ArtikelModel())->selectSum('views')->where('penulis_id', $userId)->first();
+        $totalViews = (int) ($queryViews['views'] ?? 0);
 
-        return view('dashboard/index', $data);
+        $totalDraf = 0;
+        if (ArtikelModel::adaKolomStatus()) {
+            $totalDraf = (new ArtikelModel())->where('penulis_id', $userId)->where('status', 'draft')->countAllResults();
+        }
+
+        $totalKomentar = \Config\Database::connect()->table('komentar')
+            ->join('artikel', 'artikel.id = komentar.artikel_id')
+            ->where('artikel.penulis_id', $userId)
+            ->countAllResults();
+
+        $artikelTerbaru = (new ArtikelModel())->where('penulis_id', $userId)
+            ->orderBy('created_at', 'DESC')
+            ->findAll(5);
+
+        return view('dashboard/index', [
+            'title'           => 'Dashboard | Ruang Rikza',
+            'total_artikel'   => $totalArtikel,
+            'total_views'     => $totalViews,
+            'total_draf'      => $totalDraf,
+            'total_komentar'  => $totalKomentar,
+            'artikel_terbaru' => $artikelTerbaru,
+        ]);
     }
 
     public function profil()

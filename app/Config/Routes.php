@@ -23,6 +23,7 @@ $routes->group('dashboard', ['filter' => 'session'], static function ($routes) {
     $routes->get('artikel/edit/(:num)', 'Artikel::edit/$1'); 
     $routes->post('artikel/update/(:num)', 'Artikel::update/$1'); 
     
+    $routes->post('artikel/status/(:num)', 'Artikel::ubahStatus/$1');
     $routes->post('artikel/hapus/(:num)', 'Artikel::hapus/$1');
 
     $routes->get('kategori/tambah', 'Artikel::kategoriTambah');
@@ -42,6 +43,7 @@ $routes->get('artikel/(:segment)', 'Blog::read/$1');
 $routes->post('artikel/komentar', 'Blog::submitKomentar');
 $routes->post('artikel/reaksi', 'Blog::reaksiArtikel');
 $routes->post('komentar/reaksi', 'Blog::reaksiKomentar');
+$routes->post('komentar/hapus/(:num)', 'Blog::hapusKomentar/$1');
 $routes->post('artikel/simpan', 'Blog::simpanArtikel');
 
 $routes->get('profile/(:segment)', 'Profil::index/$1');

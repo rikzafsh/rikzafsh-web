@@ -18,16 +18,6 @@ $actionUrl = $isEdit ? "/dashboard/kategori/update/{$kategori['id']}" : "/dashbo
         </h2>
     </div>
 
-    <?php if (session()->getFlashdata('errors')) : ?>
-        <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-            <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
-            <?php foreach (session()->getFlashdata('errors') as $error) : ?>
-                <li><?= esc($error) ?></li>
-            <?php endforeach ?>
-            </ul>
-        </div>
-    <?php endif; ?>
-
     <form action="<?= $actionUrl ?>" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 20px;">
         <?= csrf_field() ?>
 

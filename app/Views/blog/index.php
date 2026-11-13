@@ -1,105 +1,132 @@
 <?= $this->extend('layout/template') ?>
 
 <?= $this->section('content') ?>
+<?php
+$adaFilter = $keyword !== '' || $kategori_aktif !== '' || $penulis_aktif !== '';
 
-<h1 style="color: var(--theme-primary); margin-bottom: 20px;">Penjelajah Artikel</h1>
+// Membuat URL daftar artikel dengan mengubah sebagian parameter (halaman otomatis kembali ke 1)
+$buatUrl = static function (array $ubah) use ($keyword, $kategori_aktif, $penulis_aktif, $sort_aktif): string {
+    $q = [
+        'cari'     => $keyword,
+        'kategori' => $kategori_aktif,
+        'penulis'  => $penulis_aktif,
+        'sort'     => $sort_aktif !== 'terbaru' ? $sort_aktif : '',
+    ];
+    foreach ($ubah as $kunci => $nilai) {
+        $q[$kunci] = $nilai;
+    }
+    $q = array_filter($q, static fn ($v) => $v !== '' && $v !== null);
 
-<form action="/artikel" method="get" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
-    
-    <div style="flex: 2; min-width: 200px;">
-        <label style="display:block; font-size:0.85em; font-weight:bold; margin-bottom:5px;">Kata Kunci</label>
-        <input type="text" name="cari" value="<?= esc($keyword) ?>" placeholder="Cari judul atau isi artikel..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+    return base_url('artikel') . ($q ? '?' . http_build_query($q) : '');
+};
+
+if ($nama_kategori_aktif !== '') {
+    $judulHalaman = 'Kategori: ' . $nama_kategori_aktif;
+    $subJudul     = 'Kumpulan tulisan dalam kategori ini.';
+} elseif ($nama_penulis_aktif !== '') {
+    $judulHalaman = 'Tulisan oleh ' . $nama_penulis_aktif;
+    $subJudul     = 'Semua artikel yang ditulis oleh penulis ini.';
+} elseif ($keyword !== '') {
+    $judulHalaman = 'Hasil pencarian';
+    $subJudul     = 'Menampilkan artikel yang cocok dengan “' . $keyword . '”.';
+} else {
+    $judulHalaman = 'Semua Artikel';
+    $subJudul     = 'Temukan tulisan, tutorial, dan catatan terbaru.';
+}
+
+$tampilkanUnggulan = ! $adaFilter && $sort_aktif === 'terbaru' && (int) $halaman_aktif === 1 && ! empty($daftar_artikel);
+$unggulan          = $tampilkanUnggulan ? $daftar_artikel[0] : null;
+$daftarGrid        = $tampilkanUnggulan ? array_slice($daftar_artikel, 1) : $daftar_artikel;
+?>
+
+<section class="page-hero">
+    <div class="page-hero__inner">
+        <h1><?= esc($judulHalaman) ?></h1>
+        <p><?= esc($subJudul) ?></p>
     </div>
+</section>
 
-    <div style="flex: 1; min-width: 150px;">
-        <label style="display:block; font-size:0.85em; font-weight:bold; margin-bottom:5px;">Kategori</label>
-        <select name="kategori" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-            <option value="">Semua Kategori</option>
-            <?php foreach ($semua_kategori as $kat): ?>
-                <option value="<?= esc($kat['slug']) ?>" <?= $kategori_aktif == $kat['slug'] ? 'selected' : '' ?>><?= esc($kat['nama_kategori']) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+<div class="container">
+    <form class="filter-bar" action="<?= base_url('artikel') ?>" method="get" role="search">
+        <div class="filter-bar__row">
+            <div class="search-field">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <label class="sr-only" for="cari">Kata kunci</label>
+                <input class="input" type="search" id="cari" name="cari" value="<?= esc($keyword, 'attr') ?>" placeholder="Cari judul atau isi artikel…">
+            </div>
 
-    <div style="flex: 1; min-width: 150px;">
-        <label style="display:block; font-size:0.85em; font-weight:bold; margin-bottom:5px;">Urutkan</label>
-        <select name="sort" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-            <option value="terbaru" <?= $sort_aktif == 'terbaru' ? 'selected' : '' ?>>Terbaru</option>
-            <option value="terlama" <?= $sort_aktif == 'terlama' ? 'selected' : '' ?>>Terlama</option>
-        </select>
-    </div>
+            <label class="sr-only" for="sort">Urutkan</label>
+            <select class="select" id="sort" name="sort" style="width: auto; min-width: 170px;" onchange="this.form.submit()">
+                <option value="terbaru" <?= $sort_aktif === 'terbaru' ? 'selected' : '' ?>>Urutkan: Terbaru</option>
+                <option value="populer" <?= $sort_aktif === 'populer' ? 'selected' : '' ?>>Urutkan: Terpopuler</option>
+                <option value="terlama" <?= $sort_aktif === 'terlama' ? 'selected' : '' ?>>Urutkan: Terlama</option>
+            </select>
 
-    <?php if (!empty($penulis_aktif)): ?>
-        <input type="hidden" name="penulis" value="<?= esc($penulis_aktif) ?>">
-    <?php endif; ?>
+            <?php if ($kategori_aktif !== ''): ?><input type="hidden" name="kategori" value="<?= esc($kategori_aktif, 'attr') ?>"><?php endif ?>
+            <?php if ($penulis_aktif !== ''): ?><input type="hidden" name="penulis" value="<?= esc($penulis_aktif, 'attr') ?>"><?php endif ?>
 
-    <div style="display: flex; gap: 10px;">
-        <button type="submit" style="padding: 9px 20px; background: var(--theme-button); color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Filter</button>
-        
-        <?php if (!empty($keyword) || !empty($kategori_aktif) || !empty($penulis_aktif)): ?>
-            <a href="/artikel" style="padding: 8px 15px; background: #e0e0e0; color: #333; border-radius: 4px; text-decoration: none; font-size: 0.9em; font-weight: bold; display: inline-block;">Reset</a>
-        <?php endif; ?>
-    </div>
-</form>
-
-<?php if (!empty($nama_penulis_aktif)): ?>
-    <p style="background: var(--theme-bg-sidebar); padding: 10px 15px; border-radius: 4px; color: var(--theme-primary); font-weight: 500; margin-bottom: 20px;">
-        Menampilkan artikel yang ditulis oleh: <strong><?= esc($nama_penulis_aktif) ?></strong>
-    </p>
-<?php endif; ?>
-
-
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px;">
-    <?php if (!empty($daftar_artikel) && is_array($daftar_artikel)): ?>
-        <?php foreach ($daftar_artikel as $art): ?>
-            <article style="background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
-                
-                <a href="/artikel/<?= esc($art['slug']) ?>" style="display: block; overflow: hidden;">
-                    <?php if (!empty($art['thumbnail'])): ?>
-                        <img src="<?= base_url('uploads/artikel/' . $art['thumbnail']) ?>" alt="Thumbnail Artikel" style="width: 100%; height: 180px; object-fit: cover; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-
-                    <?php elseif (!empty($art['cover_image'])): ?>
-                        <img src="<?= base_url('uploads/kategori/' . $art['cover_image']) ?>" alt="Cover Kategori" style="width: 100%; height: 180px; object-fit: cover; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-
-                    <?php else: ?>
-                        <div style="width: 100%; height: 180px; background: #ddd; display: flex; align-items: center; justify-content: center; color: #888; font-weight: bold;">No Image</div>
-                    <?php endif; ?>
-                </a>
-
-                <div style="padding: 20px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <a href="/artikel?kategori=<?= urlencode((string) $art['kat_slug']) ?>" style="background: <?= safe_color($art['kat_colour'] ?? null, '#29aafe') ?>; color: #fff; font-size: 0.75em; padding: 4px 10px; border-radius: 20px; font-weight: bold; text-transform: uppercase; text-decoration: none; display: inline-block;">
-                            <?= esc($art['nama_kategori']) ?>
-                        </a>
-                        
-                        <h3 style="margin: 15px 0 10px 0; font-size: 1.25em;">
-                            <a href="/artikel/<?= esc($art['slug']) ?>" style="color: var(--theme-text); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--theme-accent)'" onmouseout="this.style.color='var(--theme-text)'">
-                                <?= esc($art['judul']) ?>
-                            </a>
-                        </h3>
-                        
-                        <p style="color: #666; font-size: 0.9em; line-height: 1.5; margin-bottom: 15px;">
-                            <?= esc(mb_substr(trim(strip_tags($art['konten'])), 0, 120)) ?>...
-                        </p>
-                    </div>
-
-                    <div style="border-top: 1px solid #eee; padding-top: 10px; font-size: 0.8em; color: #777; display: flex; justify-content: space-between; align-items: center;">
-                        <span>Oleh: 
-                            <a href="/artikel?penulis=<?= urlencode((string) $art['username']) ?>" style="color: var(--theme-button); font-weight: bold; text-decoration: none;">
-                                <?= esc(!empty($art['full_name']) ? $art['full_name'] : $art['username']) ?>
-                            </a>
-                        </span>
-                        <span><?= date('d M Y', strtotime($art['created_at'])) ?></span>
-                    </div>
-                </div>
-
-            </article>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">
-            <h3>Artikel tidak ditemukan.</h3>
+            <button type="submit" class="btn btn--primary">Cari</button>
         </div>
-    <?php endif; ?>
-</div>
 
+        <?php if (! empty($semua_kategori)): ?>
+            <div class="chips" role="group" aria-label="Filter kategori">
+                <a class="chip<?= $kategori_aktif === '' ? ' is-active' : '' ?>" href="<?= esc($buatUrl(['kategori' => '']), 'attr') ?>">Semua</a>
+                <?php foreach ($semua_kategori as $kat): ?>
+                    <a class="chip<?= $kategori_aktif === $kat['slug'] ? ' is-active' : '' ?>" href="<?= esc($buatUrl(['kategori' => $kat['slug']]), 'attr') ?>">
+                        <?= esc($kat['nama_kategori']) ?> <small><?= (int) $kat['total_artikel'] ?></small>
+                    </a>
+                <?php endforeach ?>
+            </div>
+        <?php endif ?>
+    </form>
+
+    <div class="result-info">
+        <span>
+            <?php if ($total_hasil > 0): ?>
+                <strong><?= number_format($total_hasil) ?></strong> artikel ditemukan
+            <?php else: ?>
+                Tidak ada artikel yang cocok
+            <?php endif ?>
+        </span>
+
+        <?php if ($adaFilter): ?>
+            <span class="active-filters">
+                <?php if ($keyword !== ''): ?>
+                    <span class="tag-removable">Kata kunci: <?= esc($keyword) ?> <a href="<?= esc($buatUrl(['cari' => '']), 'attr') ?>" aria-label="Hapus filter kata kunci">&times;</a></span>
+                <?php endif ?>
+                <?php if ($nama_penulis_aktif !== ''): ?>
+                    <span class="tag-removable">Penulis: <?= esc($nama_penulis_aktif) ?> <a href="<?= esc($buatUrl(['penulis' => '']), 'attr') ?>" aria-label="Hapus filter penulis">&times;</a></span>
+                <?php endif ?>
+                <a class="link-more" href="<?= base_url('artikel') ?>">Reset semua</a>
+            </span>
+        <?php endif ?>
+    </div>
+
+    <?php if (! empty($daftar_artikel)): ?>
+        <?php if ($unggulan): ?>
+            <?= view('blog/_unggulan', ['art' => $unggulan, 'label' => 'Artikel terbaru']) ?>
+        <?php endif ?>
+
+        <?php if (! empty($daftarGrid)): ?>
+            <div class="grid">
+                <?php foreach ($daftarGrid as $art): ?>
+                    <?= view('blog/_kartu', ['art' => $art]) ?>
+                <?php endforeach ?>
+            </div>
+        <?php endif ?>
+
+        <?= $pager->links('default', 'ruang_rikza') ?>
+    <?php else: ?>
+        <div class="empty">
+            <div class="empty__icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+            <h3>Artikel tidak ditemukan</h3>
+            <p><?= $adaFilter ? 'Coba kata kunci lain atau hapus beberapa filter.' : 'Belum ada artikel yang diterbitkan.' ?></p>
+            <?php if ($adaFilter): ?>
+                <a class="btn btn--primary" href="<?= base_url('artikel') ?>">Tampilkan semua artikel</a>
+            <?php elseif (auth()->loggedIn()): ?>
+                <a class="btn btn--primary" href="<?= base_url('dashboard/artikel/tambah') ?>">Tulis artikel pertama</a>
+            <?php endif ?>
+        </div>
+    <?php endif ?>
+</div>
 <?= $this->endSection() ?>
