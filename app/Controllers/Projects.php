@@ -33,7 +33,8 @@ class Projects extends BaseController
         }
 
         $data = [
-            'title'   => 'Projects',
+            'title'   => 'Pustaka Karya | Ruang Rikza',
+            'fullWidthPage' => true,
             'majalah' => $majalah,
         ];
 

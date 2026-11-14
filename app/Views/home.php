@@ -1,103 +1,98 @@
 <?= $this->extend('layout/template') ?>
 
 <?= $this->section('content') ?>
-<?php
-$hari  = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-$bulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-$hariIni = $hari[(int) date('w')] . ', ' . date('j') . ' ' . $bulan[(int) date('n')] . ' ' . date('Y');
 
-$unggulan = $terbaru[0] ?? null;
-$sisa     = array_slice($terbaru, 1, 6);
-?>
-
-<section class="intro">
-    <div class="intro__inner">
-        <span class="intro__date"><?= esc($hariIni) ?></span>
-        <h1>Tulisan, proyek, dan catatan belajar.</h1>
-        <p>Selamat datang di Ruang Rikza. Baca artikel terbaru, atau lihat proyek yang sedang dikerjakan.</p>
-        <div class="intro__links">
-            <a href="<?= base_url('artikel') ?>">Jelajahi artikel &rarr;</a>
-            <a href="<?= base_url('projects') ?>">Lihat proyek &rarr;</a>
+<section class="hero">
+    <div class="hero__grid">
+        <div>
+            <span class="eyebrow">Ruang Rikza</span>
+            <h1>Karya, tulisan, dan proyek dalam satu ruang.</h1>
+            <p class="hero__lead">Kumpulan publikasi, artikel, dan proyek digital Rikza F. Sh., disusun agar mudah dijelajahi dan dibaca.</p>
+            <div class="hero__actions">
+                <a class="btn btn--primary btn--lg" href="<?= base_url('projects') ?>">Lihat Karya</a>
+                <a class="btn btn--light btn--lg" href="<?= base_url('artikel') ?>">Baca Artikel</a>
+            </div>
         </div>
+
+        <aside class="glance" aria-label="Ringkasan situs">
+            <h2 class="glance__title">Sekilas</h2>
+            <div class="glance__row"><span>Edisi karya</span><strong><?= number_format($total_karya) ?></strong></div>
+            <div class="glance__row"><span>Artikel terbit</span><strong><?= number_format($total_artikel) ?></strong></div>
+            <div class="glance__row"><span>Topik tulisan</span><strong><?= number_format(count($kategori)) ?></strong></div>
+            <div class="glance__row"><span>Total dibaca</span><strong><?= number_format($total_views) ?></strong></div>
+        </aside>
     </div>
 </section>
 
-<div class="container">
-    <div class="home-grid">
-
-        <section aria-labelledby="judul-terbaru">
-            <h2 class="block-title" id="judul-terbaru">Terbaru</h2>
-
-            <?php if ($unggulan): ?>
-                <?= view('blog/_unggulan', ['art' => $unggulan]) ?>
-
-                <?php if (! empty($sisa)): ?>
-                    <div class="post-list">
-                        <?php foreach ($sisa as $art): ?>
-                            <?= view('blog/_baris', ['art' => $art]) ?>
-                        <?php endforeach ?>
-                    </div>
-                <?php endif ?>
-
-                <p style="margin-top: 18px;"><a class="link-more" href="<?= base_url('artikel') ?>">Lihat semua artikel (<?= number_format($total_artikel) ?>) &rarr;</a></p>
-            <?php else: ?>
-                <div class="empty">
-                    <h3>Belum ada artikel</h3>
-                    <p>Jadilah yang pertama menulis di sini.</p>
-                    <a class="btn btn--primary" href="<?= base_url(auth()->loggedIn() ? 'dashboard/artikel/tambah' : 'login') ?>"><?= auth()->loggedIn() ? 'Tulis artikel pertama' : 'Masuk untuk menulis' ?></a>
+<?php if (! empty($karya)): ?>
+    <section class="band band--white" aria-labelledby="judul-karya">
+        <div class="container">
+            <div class="sec-head">
+                <div>
+                    <span class="eyebrow">Publikasi</span>
+                    <h2 id="judul-karya">Pustaka Karya</h2>
+                    <p>Edisi terbaru dari publikasi yang dikelola di Ruang Rikza.</p>
                 </div>
-            <?php endif ?>
-        </section>
+                <a class="link-more" href="<?= base_url('projects') ?>">Lihat semua karya &rarr;</a>
+            </div>
+            <div class="proj-grid">
+                <?php foreach ($karya as $mjl): ?>
+                    <?= view('projects/_kartu', ['mjl' => $mjl]) ?>
+                <?php endforeach ?>
+            </div>
+        </div>
+    </section>
+<?php endif ?>
 
-        <aside aria-label="Informasi tambahan">
-            <?php if (! empty($populer)): ?>
-                <div class="side-box">
-                    <h2 class="block-title block-title--small">Paling banyak dibaca</h2>
-                    <ol class="side-list" style="list-style: none; padding: 0;">
-                        <?php foreach ($populer as $i => $p): ?>
-                            <li>
-                                <a class="rank-item" href="<?= esc(base_url('artikel/' . $p['slug']), 'attr') ?>">
-                                    <span class="rank-item__no"><?= $i + 1 ?></span>
-                                    <span>
-                                        <span class="rank-item__title"><?= esc($p['judul']) ?></span>
-                                        <span class="rank-item__meta"><?= number_format($p['views']) ?> dibaca &middot; <?= esc(tgl_indo($p['created_at'])) ?></span>
-                                    </span>
-                                </a>
-                            </li>
-                        <?php endforeach ?>
-                    </ol>
+<?php if (! empty($kategori)): ?>
+    <section class="band" aria-labelledby="judul-topik">
+        <div class="container">
+            <div class="sec-head">
+                <div>
+                    <span class="eyebrow">Topik</span>
+                    <h2 id="judul-topik">Bidang Tulisan</h2>
+                    <p>Jelajahi artikel berdasarkan topik yang dibahas.</p>
                 </div>
-            <?php endif ?>
+            </div>
+            <div class="topic-grid">
+                <?php foreach ($kategori as $k): ?>
+                    <a class="topic-card" style="--kat: <?= safe_color($k['colour'] ?? null, '#29aafe') ?>" href="<?= esc(base_url('artikel?kategori=' . rawurlencode($k['slug'])), 'attr') ?>">
+                        <h3><?= esc($k['nama_kategori']) ?></h3>
+                        <p><?= ! empty($k['deskripsi']) ? esc(mb_strimwidth($k['deskripsi'], 0, 130, '…', 'UTF-8')) : 'Kumpulan artikel dengan topik ' . esc($k['nama_kategori']) . '.' ?></p>
+                        <div class="topic-card__foot">Lihat artikel &rarr; <span><?= (int) $k['total_artikel'] ?> artikel</span></div>
+                    </a>
+                <?php endforeach ?>
+            </div>
+        </div>
+    </section>
+<?php endif ?>
 
-            <?php if (! empty($kategori)): ?>
-                <div class="side-box">
-                    <h2 class="block-title block-title--small">Kategori</h2>
-                    <ul class="side-list">
-                        <?php foreach ($kategori as $k): ?>
-                            <li>
-                                <a class="cat-item" style="--kat: <?= safe_color($k['colour'] ?? null, '#29aafe') ?>" href="<?= esc(base_url('artikel?kategori=' . rawurlencode($k['slug'])), 'attr') ?>">
-                                    <span><?= esc($k['nama_kategori']) ?></span>
-                                    <small><?= (int) $k['total_artikel'] ?></small>
-                                </a>
-                            </li>
-                        <?php endforeach ?>
-                    </ul>
-                </div>
-            <?php endif ?>
+<section class="band band--white" aria-labelledby="judul-artikel">
+    <div class="container">
+        <div class="sec-head">
+            <div>
+                <span class="eyebrow">Artikel</span>
+                <h2 id="judul-artikel">Tulisan Terbaru</h2>
+                <p>Artikel paling baru dari para penulis.</p>
+            </div>
+            <a class="link-more" href="<?= base_url('artikel') ?>">Lihat semua artikel &rarr;</a>
+        </div>
 
-            <div class="note-box">
+        <?php if (! empty($terbaru)): ?>
+            <div class="grid">
+                <?php foreach ($terbaru as $art): ?>
+                    <?= view('blog/_kartu', ['art' => $art]) ?>
+                <?php endforeach ?>
+            </div>
+        <?php else: ?>
+            <div class="empty">
+                <h3>Belum ada artikel</h3>
+                <p>Artikel yang terbit akan tampil di sini.</p>
                 <?php if (auth()->loggedIn()): ?>
-                    <strong>Punya ide untuk dibagikan?</strong>
-                    <p>Tulis artikel baru. Kamu bisa menyimpannya sebagai draf dulu.</p>
-                    <a class="link-more" href="<?= base_url('dashboard/artikel/tambah') ?>">Tulis artikel &rarr;</a>
-                <?php else: ?>
-                    <strong>Ingin ikut menulis?</strong>
-                    <p>Masuk atau daftar untuk menulis, berkomentar, dan menyimpan bacaan.</p>
-                    <a class="link-more" href="<?= base_url('login') ?>">Masuk atau daftar &rarr;</a>
+                    <a class="btn btn--primary" href="<?= base_url('dashboard/artikel/tambah') ?>">Tulis artikel pertama</a>
                 <?php endif ?>
             </div>
-        </aside>
-
+        <?php endif ?>
     </div>
-</div>
+</section>
 <?= $this->endSection() ?>

@@ -15,7 +15,7 @@
             background: #703996;
         }
         .box { background: #fff; border-radius: 6px; padding: 40px 34px; max-width: 460px; width: 100%; }
-        .code { font-family: Georgia, 'Times New Roman', serif; font-size: 4.5rem; font-weight: 700; line-height: 1; margin: 0 0 6px; color: #703996; }
+        .code { font-size: 4.5rem; font-weight: 700; line-height: 1; margin: 0 0 6px; color: #703996; }
         h1 { font-size: 1.4rem; margin: 0 0 10px; }
         p { color: #6b7280; margin: 0 0 24px; line-height: 1.6; }
         .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }

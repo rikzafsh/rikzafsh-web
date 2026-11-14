@@ -46,7 +46,7 @@ $daftarGrid        = $tampilkanUnggulan ? array_slice($daftar_artikel, 1) : $daf
     </div>
 </section>
 
-<div class="container">
+<div class="container pad-bottom">
     <form class="filter-bar" action="<?= base_url('artikel') ?>" method="get" role="search">
         <div class="filter-bar__row">
             <div class="search-field">

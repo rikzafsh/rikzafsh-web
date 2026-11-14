@@ -113,3 +113,51 @@ if (! function_exists('nama_tampil')) {
         return trim((string) $fullName) !== '' ? (string) $fullName : (string) $username;
     }
 }
+
+if (! function_exists('edisi_romawi')) {
+    function edisi_romawi($angka): string
+    {
+        $n   = (int) $angka;
+        $res = '';
+        foreach (['M' => 1000, 'CM' => 900, 'D' => 500, 'CD' => 400, 'C' => 100, 'XC' => 90, 'L' => 50, 'XL' => 40, 'X' => 10, 'IX' => 9, 'V' => 5, 'IV' => 4, 'I' => 1] as $simbol => $nilai) {
+            $res .= str_repeat($simbol, intdiv($n, $nilai));
+            $n   %= $nilai;
+        }
+
+        return $res !== '' ? $res : '-';
+    }
+}
+
+if (! function_exists('periode_edisi')) {
+    /** Contoh kode "2026T1" menjadi "Jan–Apr 2026". Selain pola itu: "Umum". */
+    function periode_edisi(?string $kode): string
+    {
+        if (preg_match('/^(\d{4})T(\d)/i', (string) $kode, $m)) {
+            $rentang = ['1' => 'Jan–Apr', '2' => 'May–Aug', '3' => 'Sep–Dec'];
+
+            if (isset($rentang[$m[2]])) {
+                return $rentang[$m[2]] . ' ' . $m[1];
+            }
+        }
+
+        return 'Umum';
+    }
+}
+
+if (! function_exists('warna_teks_kontras')) {
+    /** Memilih teks putih atau gelap agar terbaca di atas warna latar hex. */
+    function warna_teks_kontras(string $hex): string
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) === 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        if (strlen($hex) !== 6) {
+            return '#ffffff';
+        }
+
+        $luminans = 0.299 * hexdec(substr($hex, 0, 2)) + 0.587 * hexdec(substr($hex, 2, 2)) + 0.114 * hexdec(substr($hex, 4, 2));
+
+        return $luminans > 160 ? '#1d1d1d' : '#ffffff';
+    }
+}

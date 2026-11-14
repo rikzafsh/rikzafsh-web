@@ -93,7 +93,10 @@ $aktif = static fn (string $pola): string => url_is($pola) ? ' is-active' : '';
         <?php if ($isDashboard): ?>
             <?= $this->renderSection('content') ?>
         <?php elseif (! empty($fullWidthPage)): ?>
-            <div class="container flash-wrap"><?= $this->include('layout/flash') ?></div>
+            <?php $flashHtml = trim($this->include('layout/flash')); ?>
+            <?php if ($flashHtml !== ''): ?>
+                <div class="container flash-wrap"><?= $flashHtml ?></div>
+            <?php endif ?>
             <?= $this->renderSection('content') ?>
         <?php else: ?>
             <div class="container">
