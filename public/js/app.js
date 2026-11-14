@@ -17,10 +17,10 @@
 
     // ---- Menu pengguna: tutup saat klik di luar atau tekan Esc ----
     document.addEventListener('click', function (e) {
-        $$('.user-menu[open]').forEach(function (d) { if (!d.contains(e.target)) d.removeAttribute('open'); });
+        $$('.user-menu[open], .notif-menu[open]').forEach(function (d) { if (!d.contains(e.target)) d.removeAttribute('open'); });
     });
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') $$('.user-menu[open]').forEach(function (d) { d.removeAttribute('open'); });
+        if (e.key === 'Escape') $$('.user-menu[open], .notif-menu[open]').forEach(function (d) { d.removeAttribute('open'); });
     });
 
     // ---- Alert: tombol tutup + hilang otomatis untuk pesan sukses ----

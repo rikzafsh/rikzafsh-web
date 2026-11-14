@@ -44,6 +44,14 @@ $routes->post('artikel/komentar', 'Blog::submitKomentar');
 $routes->post('artikel/reaksi', 'Blog::reaksiArtikel');
 $routes->post('komentar/reaksi', 'Blog::reaksiKomentar');
 $routes->post('komentar/hapus/(:num)', 'Blog::hapusKomentar/$1');
+
+// Notifikasi (harus login)
+$routes->group('notifikasi', ['filter' => 'session'], function ($routes) {
+    $routes->get('/', 'Notifikasi::index');
+    $routes->get('buka/(:num)', 'Notifikasi::buka/$1');
+    $routes->post('baca-semua', 'Notifikasi::bacaSemua');
+    $routes->post('hapus-dibaca', 'Notifikasi::hapusDibaca');
+});
 $routes->post('artikel/simpan', 'Blog::simpanArtikel');
 
 $routes->get('profile/(:segment)', 'Profil::index/$1');

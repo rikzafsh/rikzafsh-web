@@ -7,6 +7,7 @@ use App\Models\KategoriModel;
 use App\Models\KomentarModel;
 use App\Models\ArtikelReaksiModel;
 use App\Models\KomentarReaksiModel;
+use App\Models\NotifikasiModel;
 
 class Blog extends BaseController
 {
@@ -268,16 +269,29 @@ class Blog extends BaseController
             return redirect()->back()->with('error', 'Permintaan tidak valid.');
         }
 
+        $artikel     = (new ArtikelModel())->find($artikelId);
+        $penulisId   = (int) $artikel['penulis_id'];
         $reaksiModel = new ArtikelReaksiModel();
-        $userId      = auth()->id();
+        $userId      = (int) auth()->id();
 
         $cek = $reaksiModel->where('artikel_id', $artikelId)->where('user_id', $userId)->first();
 
         if ($cek) {
             if ($cek['jenis'] === $jenis) {
+                // Klik tombol yang sama: batalkan reaksi
                 $reaksiModel->delete($cek['id']);
+
+                if ($jenis === 'like') {
+                    NotifikasiModel::hapusSuka('like_artikel', $penulisId, $userId, $artikelId);
+                }
             } else {
                 $reaksiModel->update($cek['id'], ['jenis' => $jenis]);
+
+                if ($jenis === 'like') {
+                    NotifikasiModel::catat('like_artikel', $penulisId, $userId, $artikelId);
+                } else {
+                    NotifikasiModel::hapusSuka('like_artikel', $penulisId, $userId, $artikelId);
+                }
             }
         } else {
             $reaksiModel->save([
@@ -285,6 +299,10 @@ class Blog extends BaseController
                 'user_id'    => $userId,
                 'jenis'      => $jenis,
             ]);
+
+            if ($jenis === 'like') {
+                NotifikasiModel::catat('like_artikel', $penulisId, $userId, $artikelId);
+            }
         }
 
         return redirect()->to($this->urlArtikel($artikelId, 'reaksi'));
@@ -304,16 +322,28 @@ class Blog extends BaseController
             return redirect()->back()->with('error', 'Permintaan tidak valid.');
         }
 
+        $pemilikId   = (int) $komentar['user_id'];
+        $artikelId   = (int) $komentar['artikel_id'];
         $reaksiModel = new KomentarReaksiModel();
-        $userId      = auth()->id();
+        $userId      = (int) auth()->id();
 
         $cek = $reaksiModel->where('komentar_id', $komentarId)->where('user_id', $userId)->first();
 
         if ($cek) {
             if ($cek['jenis'] === $jenis) {
                 $reaksiModel->delete($cek['id']);
+
+                if ($jenis === 'like') {
+                    NotifikasiModel::hapusSuka('like_komentar', $pemilikId, $userId, $artikelId, $komentarId);
+                }
             } else {
                 $reaksiModel->update($cek['id'], ['jenis' => $jenis]);
+
+                if ($jenis === 'like') {
+                    NotifikasiModel::catat('like_komentar', $pemilikId, $userId, $artikelId, $komentarId);
+                } else {
+                    NotifikasiModel::hapusSuka('like_komentar', $pemilikId, $userId, $artikelId, $komentarId);
+                }
             }
         } else {
             $reaksiModel->save([
@@ -321,9 +351,13 @@ class Blog extends BaseController
                 'user_id'     => $userId,
                 'jenis'       => $jenis,
             ]);
+
+            if ($jenis === 'like') {
+                NotifikasiModel::catat('like_komentar', $pemilikId, $userId, $artikelId, $komentarId);
+            }
         }
 
-        return redirect()->to($this->urlArtikel((int) $komentar['artikel_id'], 'komentar-' . $komentarId));
+        return redirect()->to($this->urlArtikel($artikelId, 'komentar-' . $komentarId));
     }
 
     public function submitKomentar()
@@ -350,6 +384,7 @@ class Blog extends BaseController
         $komentarModel = new KomentarModel();
         $artikelId     = (int) $this->request->getPost('artikel_id');
         $parentId      = (int) $this->request->getPost('parent_id');
+        $indukDibalas  = null;
 
         // Balasan harus menempel pada komentar utama di artikel yang sama
         if ($parentId > 0) {
@@ -358,6 +393,8 @@ class Blog extends BaseController
             if ($induk === null || (int) $induk['artikel_id'] !== $artikelId) {
                 return redirect()->back()->with('error', 'Komentar yang dibalas tidak valid.');
             }
+
+            $indukDibalas = $induk;
 
             // Balasan dari balasan dinaikkan ke komentar utamanya
             if (! empty($induk['parent_id'])) {
@@ -372,7 +409,21 @@ class Blog extends BaseController
             'isi_komentar' => trim((string) $this->request->getPost('isi_komentar')),
         ]);
 
-        return redirect()->to($this->urlArtikel($artikelId, 'komentar-' . $komentarModel->getInsertID()))
+        $komentarBaruId = (int) $komentarModel->getInsertID();
+        $pelakuId       = (int) auth()->id();
+
+        if ($indukDibalas !== null) {
+            // Balasan: beri tahu pemilik komentar yang dibalas
+            NotifikasiModel::catat('balasan', (int) $indukDibalas['user_id'], $pelakuId, $artikelId, $komentarBaruId);
+        } else {
+            // Komentar baru: beri tahu penulis artikel
+            $artikelDikomentari = (new ArtikelModel())->find($artikelId);
+            if ($artikelDikomentari) {
+                NotifikasiModel::catat('komentar', (int) $artikelDikomentari['penulis_id'], $pelakuId, $artikelId, $komentarBaruId);
+            }
+        }
+
+        return redirect()->to($this->urlArtikel($artikelId, 'komentar-' . $komentarBaruId))
             ->with('message', 'Komentar terkirim.');
     }
 
